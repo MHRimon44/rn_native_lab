@@ -1,5 +1,12 @@
 package com.rnnativelab
 
+import android.net.Uri
+import android.os.Environment
+import androidx.core.content.FileProvider
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import android.os.Handler
 import android.os.Looper
 import android.Manifest
@@ -32,13 +39,140 @@ class NativeDebugModule(
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 2001
         private const val CAMERA_CAPTURE_REQUEST_CODE = 3001
+        private const val FULL_SIZE_CAMERA_REQUEST_CODE = 3002
     }
 
     private var cameraPermissionPromise: Promise? = null
     private var cameraCapturePromise: Promise? = null
+    private var fullSizeCameraPromise: Promise? = null
+    private var currentPhotoPath: String? = null
+    private var currentPhotoUri: Uri? = null
+    private var currentPhotoFileName: String? = null
     
     init {
         reactContext.addActivityEventListener(this)
+    }
+
+    private fun createImageFile(): File {
+        val timestamp = SimpleDateFormat(
+            "yyyyMMdd_HHmmss",
+            Locale.US
+        ).format(Date())
+
+        val storageDir = reactContext.getExternalFilesDir(
+            Environment.DIRECTORY_PICTURES
+        )
+
+        val imageFile = File.createTempFile(
+            "JPEG_${timestamp}_",
+            ".jpg",
+            storageDir
+        )
+
+        currentPhotoPath = imageFile.absolutePath
+        currentPhotoFileName = imageFile.name
+
+        return imageFile
+    }
+
+    private fun createFullSizeCameraResultMap(
+        success: Boolean,
+        message: String,
+        filePath: String? = null,
+        fileUri: String? = null,
+        fileName: String? = null
+    ): WritableMap {
+        return Arguments.createMap().apply {
+            putBoolean("success", success)
+            putString("message", message)
+            putString("filePath", filePath)
+            putString("fileUri", fileUri)
+            putString("fileName", fileName)
+            putString("source", "Kotlin FileProvider Camera")
+        }
+    }
+
+    @ReactMethod
+    fun openCameraFullSize(promise: Promise) {
+        try {
+            val permissionGranted = ContextCompat.checkSelfPermission(
+                reactContext,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!permissionGranted) {
+                promise.reject(
+                    "CAMERA_PERMISSION_NOT_GRANTED",
+                    "Camera permission is required before opening camera"
+                )
+                return
+            }
+
+            val activity = getCurrentActivity()
+
+            if (activity == null) {
+                promise.reject(
+                    "NO_ACTIVITY",
+                    "Current Android activity is not available"
+                )
+                return
+            }
+
+            if (fullSizeCameraPromise != null) {
+                promise.reject(
+                    "FULL_SIZE_CAMERA_IN_PROGRESS",
+                    "Another full-size camera capture request is already running"
+                )
+                return
+            }
+
+            val photoFile = createImageFile()
+
+            val photoUri = FileProvider.getUriForFile(
+                reactContext,
+                "${reactContext.packageName}.fileprovider",
+                photoFile
+            )
+
+            currentPhotoUri = photoUri
+
+            val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
+
+            fullSizeCameraPromise = promise
+
+            try {
+                activity.startActivityForResult(
+                    cameraIntent,
+                    FULL_SIZE_CAMERA_REQUEST_CODE
+                )
+            } catch (error: Exception) {
+                fullSizeCameraPromise = null
+                currentPhotoPath = null
+                currentPhotoUri = null
+                currentPhotoFileName = null
+
+                promise.reject(
+                    "OPEN_FULL_SIZE_CAMERA_ERROR",
+                    error.message ?: "Failed to open full-size camera",
+                    error
+                )
+            }
+        } catch (error: Exception) {
+            fullSizeCameraPromise = null
+            currentPhotoPath = null
+            currentPhotoUri = null
+            currentPhotoFileName = null
+
+            promise.reject(
+                "CREATE_IMAGE_FILE_ERROR",
+                error.message ?: "Failed to create image file",
+                error
+            )
+        }
     }
 
     private fun createCameraResultMap(
@@ -123,51 +257,91 @@ class NativeDebugModule(
         // Not needed for camera capture in this lesson.
     }
 
-    override fun onActivityResult(
+   override fun onActivityResult(
         activity: Activity,
         requestCode: Int,
         resultCode: Int,
         data: Intent?
     ) {
-        if (requestCode != CAMERA_CAPTURE_REQUEST_CODE) {
-            return
-        }
+        if (requestCode == CAMERA_CAPTURE_REQUEST_CODE) {
+            val promise = cameraCapturePromise
+            cameraCapturePromise = null
 
-        val promise = cameraCapturePromise
-        cameraCapturePromise = null
+            if (promise == null) {
+                return
+            }
 
-        if (promise == null) {
-            return
-        }
+            if (resultCode != Activity.RESULT_OK) {
+                val resultMap = createCameraResultMap(
+                    success = false,
+                    message = "Camera capture cancelled"
+                )
 
-        if (resultCode != Activity.RESULT_OK) {
+                promise.resolve(resultMap)
+                return
+            }
+
+            val bitmap = data?.extras?.get("data") as? Bitmap
+
+            if (bitmap == null) {
+                promise.reject(
+                    "NO_IMAGE_DATA",
+                    "Camera did not return image data"
+                )
+                return
+            }
+
             val resultMap = createCameraResultMap(
-                success = false,
-                message = "Camera capture cancelled"
+                success = true,
+                message = "Photo captured successfully",
+                width = bitmap.width,
+                height = bitmap.height
             )
 
             promise.resolve(resultMap)
             return
         }
 
-        val bitmap = data?.extras?.get("data") as? Bitmap
+        if (requestCode == FULL_SIZE_CAMERA_REQUEST_CODE) {
+            val promise = fullSizeCameraPromise
+            fullSizeCameraPromise = null
 
-        if (bitmap == null) {
-            promise.reject(
-                "NO_IMAGE_DATA",
-                "Camera did not return image data"
+            if (promise == null) {
+                return
+            }
+
+            if (resultCode != Activity.RESULT_OK) {
+                val resultMap = createFullSizeCameraResultMap(
+                    success = false,
+                    message = "Full-size camera capture cancelled",
+                    filePath = currentPhotoPath,
+                    fileUri = currentPhotoUri?.toString(),
+                    fileName = currentPhotoFileName
+                )
+
+                currentPhotoPath = null
+                currentPhotoUri = null
+                currentPhotoFileName = null
+
+                promise.resolve(resultMap)
+                return
+            }
+
+            val resultMap = createFullSizeCameraResultMap(
+                success = true,
+                message = "Full-size photo captured successfully",
+                filePath = currentPhotoPath,
+                fileUri = currentPhotoUri?.toString(),
+                fileName = currentPhotoFileName
             )
+
+            currentPhotoPath = null
+            currentPhotoUri = null
+            currentPhotoFileName = null
+
+            promise.resolve(resultMap)
             return
         }
-
-        val resultMap = createCameraResultMap(
-            success = true,
-            message = "Photo captured successfully",
-            width = bitmap.width,
-            height = bitmap.height
-        )
-
-        promise.resolve(resultMap)
     }
 
     private fun createPermissionResultMap(

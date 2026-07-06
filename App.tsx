@@ -1,12 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-shadow */
-import React, {
-  // useEffect,
-  useState,
-} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
-  // DeviceEventEmitter,
+  DeviceEventEmitter,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -16,217 +14,220 @@ import {
 
 import NativeDebugModule, {
   NativeCameraCaptureResult,
-  // NativeCouponResult,
-  // NativeDebugEventPayload,
-  // NativeOrderArraySummary,
-  // NativeOrderInput,
-  // NativeOrderItem,
-  // NativeOrderSummary,
+  NativeCouponResult,
+  NativeDebugEventPayload,
+  NativeFullSizeCameraResult,
+  NativeOrderArraySummary,
+  NativeOrderInput,
+  NativeOrderItem,
+  NativeOrderSummary,
   NativePermissionResult,
-  // OrderSyncProgressPayload,
+  OrderSyncProgressPayload,
 } from './src/native/NativeDebugModule';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 function App(): React.JSX.Element {
   const [result, setResult] = useState<string>('No native result yet');
-  // const [orderSummary, setOrderSummary] = useState<NativeOrderSummary | null>(
-  //   null,
-  // );
-  // const [recentOrders, setRecentOrders] = useState<NativeOrderItem[]>([]);
-  // const [arraySummary, setArraySummary] =
-  //   useState<NativeOrderArraySummary | null>(null);
-  // const [nativeEventMessage, setNativeEventMessage] = useState<string>(
-  //   'No native event received yet',
-  // );
-  // const [syncProgress, setSyncProgress] = useState<number>(0);
-  // const [syncMessage, setSyncMessage] = useState<string>(
-  //   'Order sync not started',
-  // );
-  // const [couponResult, setCouponResult] = useState<NativeCouponResult | null>(
-  //   null,
-  // );
+  const [orderSummary, setOrderSummary] = useState<NativeOrderSummary | null>(
+    null,
+  );
+  const [recentOrders, setRecentOrders] = useState<NativeOrderItem[]>([]);
+  const [arraySummary, setArraySummary] =
+    useState<NativeOrderArraySummary | null>(null);
+  const [nativeEventMessage, setNativeEventMessage] = useState<string>(
+    'No native event received yet',
+  );
+  const [syncProgress, setSyncProgress] = useState<number>(0);
+  const [syncMessage, setSyncMessage] = useState<string>(
+    'Order sync not started',
+  );
+  const [couponResult, setCouponResult] = useState<NativeCouponResult | null>(
+    null,
+  );
   const [cameraPermission, setCameraPermission] =
     useState<NativePermissionResult | null>(null);
   const [cameraResult, setCameraResult] =
     useState<NativeCameraCaptureResult | null>(null);
+  const [fullSizeCameraResult, setFullSizeCameraResult] =
+    useState<NativeFullSizeCameraResult | null>(null);
   // Function to handle getting greeting from native module
-  // const handleGreeting = async () => {
-  //   try {
-  //     const message = await NativeDebugModule.getNativeGreeting('SaRa');
-  //     setResult(message);
-  //   } catch (error) {
-  //     console.log('Greeting error:', error);
-  //     Alert.alert('Native Error', 'Failed to get greeting from Kotlin');
-  //   }
-  // };
+  const handleGreeting = async () => {
+    try {
+      const message = await NativeDebugModule.getNativeGreeting('SaRa');
+      setResult(message);
+    } catch (error) {
+      console.log('Greeting error:', error);
+      Alert.alert('Native Error', 'Failed to get greeting from Kotlin');
+    }
+  };
 
-  // // Function to handle opening native screen
-  // const handleOpenNativeScreen = async () => {
-  //   try {
-  //     const opened = await NativeDebugModule.openDebugScreen(
-  //       'ORD-3001',
-  //       '1500.00',
-  //     );
+  // Function to handle opening native screen
+  const handleOpenNativeScreen = async () => {
+    try {
+      const opened = await NativeDebugModule.openDebugScreen(
+        'ORD-3001',
+        '1500.00',
+      );
 
-  //     setResult(`Native screen opened: ${opened}`);
-  //   } catch (error) {
-  //     console.log('Open native screen error:', error);
-  //     Alert.alert('Native Error', 'Failed to open native screen');
-  //   }
-  // };
+      setResult(`Native screen opened: ${opened}`);
+    } catch (error) {
+      console.log('Open native screen error:', error);
+      Alert.alert('Native Error', 'Failed to open native screen');
+    }
+  };
 
-  // // Function to handle getting order summary from native module
-  // const handleGetOrderSummary = async () => {
-  //   try {
-  //     const summary = await NativeDebugModule.getOrderSummary(
-  //       'ORD-4001',
-  //       2500.0,
-  //     );
+  // Function to handle getting order summary from native module
+  const handleGetOrderSummary = async () => {
+    try {
+      const summary = await NativeDebugModule.getOrderSummary(
+        'ORD-4001',
+        2500.0,
+      );
 
-  //     setOrderSummary(summary);
-  //     setResult(`Order summary received from ${summary.source}`);
-  //   } catch (error) {
-  //     console.log('Order summary error:', error);
-  //     Alert.alert('Native Error', 'Failed to get order summary from Kotlin');
-  //   }
-  // };
+      setOrderSummary(summary);
+      setResult(`Order summary received from ${summary.source}`);
+    } catch (error) {
+      console.log('Order summary error:', error);
+      Alert.alert('Native Error', 'Failed to get order summary from Kotlin');
+    }
+  };
 
-  // // Function to handle getting recent orders from native module
-  // const handleGetRecentOrders = async () => {
-  //   try {
-  //     const orders = await NativeDebugModule.getRecentOrders(4);
+  // Function to handle getting recent orders from native module
+  const handleGetRecentOrders = async () => {
+    try {
+      const orders = await NativeDebugModule.getRecentOrders(4);
 
-  //     setRecentOrders(orders);
-  //     setResult(`Received ${orders.length} orders from Kotlin`);
-  //   } catch (error) {
-  //     console.log('Recent orders error:', error);
-  //     Alert.alert('Native Error', 'Failed to get recent orders from Kotlin');
-  //   }
-  // };
+      setRecentOrders(orders);
+      setResult(`Received ${orders.length} orders from Kotlin`);
+    } catch (error) {
+      console.log('Recent orders error:', error);
+      Alert.alert('Native Error', 'Failed to get recent orders from Kotlin');
+    }
+  };
 
-  // // Function to handle creating order from map in native module
-  // const handleCreateOrderFromMap = async () => {
-  //   try {
-  //     const input: NativeOrderInput = {
-  //       orderId: 'ORD-6001',
-  //       customerName: 'Mehedi Hasan',
-  //       amount: 3500,
-  //       status: 'processing',
-  //     };
+  // Function to handle creating order from map in native module
+  const handleCreateOrderFromMap = async () => {
+    try {
+      const input: NativeOrderInput = {
+        orderId: 'ORD-6001',
+        customerName: 'Mehedi Hasan',
+        amount: 3500,
+        status: 'processing',
+      };
 
-  //     const response = await NativeDebugModule.createOrderFromMap(input);
+      const response = await NativeDebugModule.createOrderFromMap(input);
 
-  //     setOrderSummary(response);
-  //     setResult(response.message);
-  //   } catch (error) {
-  //     console.log('Create order from map error:', error);
-  //     Alert.alert('Native Error', 'Failed to send order object to Kotlin');
-  //   }
-  // };
+      setOrderSummary(response);
+      setResult(response.message);
+    } catch (error) {
+      console.log('Create order from map error:', error);
+      Alert.alert('Native Error', 'Failed to send order object to Kotlin');
+    }
+  };
 
-  // // Function to handle summarizing orders from array in native module
-  // const handleSummarizeOrdersFromArray = async () => {
-  //   try {
-  //     const orders: NativeOrderInput[] = [
-  //       {
-  //         orderId: 'ORD-7001',
-  //         customerName: 'Customer 1',
-  //         amount: 1200,
-  //         status: 'DELIVERED',
-  //       },
-  //       {
-  //         orderId: 'ORD-7002',
-  //         customerName: 'Customer 2',
-  //         amount: 6500,
-  //         status: 'PROCESSING',
-  //       },
-  //       {
-  //         orderId: 'ORD-7003',
-  //         customerName: 'Customer 3',
-  //         amount: 900,
-  //         status: 'PENDING',
-  //       },
-  //     ];
+  // Function to handle summarizing orders from array in native module
+  const handleSummarizeOrdersFromArray = async () => {
+    try {
+      const orders: NativeOrderInput[] = [
+        {
+          orderId: 'ORD-7001',
+          customerName: 'Customer 1',
+          amount: 1200,
+          status: 'DELIVERED',
+        },
+        {
+          orderId: 'ORD-7002',
+          customerName: 'Customer 2',
+          amount: 6500,
+          status: 'PROCESSING',
+        },
+        {
+          orderId: 'ORD-7003',
+          customerName: 'Customer 3',
+          amount: 900,
+          status: 'PENDING',
+        },
+      ];
 
-  //     const summary = await NativeDebugModule.summarizeOrdersFromArray(orders);
+      const summary = await NativeDebugModule.summarizeOrdersFromArray(orders);
 
-  //     setArraySummary(summary);
-  //     setResult(summary.message);
-  //   } catch (error) {
-  //     console.log('Summarize orders error:', error);
-  //     Alert.alert('Native Error', 'Failed to summarize order array in Kotlin');
-  //   }
-  // };
+      setArraySummary(summary);
+      setResult(summary.message);
+    } catch (error) {
+      console.log('Summarize orders error:', error);
+      Alert.alert('Native Error', 'Failed to summarize order array in Kotlin');
+    }
+  };
 
-  // // useEffect to set up event listeners for native events
-  // useEffect(() => {
-  //   const debugEventSubscription = DeviceEventEmitter.addListener(
-  //     'NativeDebugEvent',
-  //     (event: NativeDebugEventPayload) => {
-  //       setNativeEventMessage(`${event.message} | Source: ${event.source}`);
-  //     },
-  //   );
+  // useEffect to set up event listeners for native events
+  useEffect(() => {
+    const debugEventSubscription = DeviceEventEmitter.addListener(
+      'NativeDebugEvent',
+      (event: NativeDebugEventPayload) => {
+        setNativeEventMessage(`${event.message} | Source: ${event.source}`);
+      },
+    );
 
-  //   const syncProgressSubscription = DeviceEventEmitter.addListener(
-  //     'OrderSyncProgress',
-  //     (event: OrderSyncProgressPayload) => {
-  //       setSyncProgress(event.progress);
-  //       setSyncMessage(
-  //         `${event.message} (${event.progress}%) for ${event.orderId}`,
-  //       );
-  //     },
-  //   );
+    const syncProgressSubscription = DeviceEventEmitter.addListener(
+      'OrderSyncProgress',
+      (event: OrderSyncProgressPayload) => {
+        setSyncProgress(event.progress);
+        setSyncMessage(
+          `${event.message} (${event.progress}%) for ${event.orderId}`,
+        );
+      },
+    );
 
-  //   return () => {
-  //     debugEventSubscription.remove();
-  //     syncProgressSubscription.remove();
-  //   };
-  // }, []);
+    return () => {
+      debugEventSubscription.remove();
+      syncProgressSubscription.remove();
+    };
+  }, []);
 
-  // // Function to handle emitting test event from native module
-  // const handleEmitTestEvent = async () => {
-  //   try {
-  //     const emitted = await NativeDebugModule.emitTestEvent(
-  //       'Hello React Native, this event came from Kotlin',
-  //     );
+  // Function to handle emitting test event from native module
+  const handleEmitTestEvent = async () => {
+    try {
+      const emitted = await NativeDebugModule.emitTestEvent(
+        'Hello React Native, this event came from Kotlin',
+      );
 
-  //     setResult(`Event emitted: ${emitted}`);
-  //   } catch (error) {
-  //     console.log('Emit event error:', error);
-  //     Alert.alert('Native Error', 'Failed to emit native event');
-  //   }
-  // };
+      setResult(`Event emitted: ${emitted}`);
+    } catch (error) {
+      console.log('Emit event error:', error);
+      Alert.alert('Native Error', 'Failed to emit native event');
+    }
+  };
 
-  // // Function to handle starting fake order sync in native module
-  // const handleStartFakeOrderSync = async () => {
-  //   try {
-  //     setSyncProgress(0);
-  //     setSyncMessage('Starting order sync...');
+  // Function to handle starting fake order sync in native module
+  const handleStartFakeOrderSync = async () => {
+    try {
+      setSyncProgress(0);
+      setSyncMessage('Starting order sync...');
 
-  //     const message = await NativeDebugModule.startFakeOrderSync('ORD-8001');
+      const message = await NativeDebugModule.startFakeOrderSync('ORD-8001');
 
-  //     setResult(message);
-  //   } catch (error) {
-  //     console.log('Start fake order sync error:', error);
-  //     Alert.alert('Native Error', 'Failed to start fake order sync');
-  //   }
-  // };
+      setResult(message);
+    } catch (error) {
+      console.log('Start fake order sync error:', error);
+      Alert.alert('Native Error', 'Failed to start fake order sync');
+    }
+  };
 
-  // // Function to handle validating coupon with callback in native module
-  // const handleValidateCouponWithCallback = () => {
-  //   NativeDebugModule.validateCouponWithCallback(
-  //     'SARA10',
-  //     2000,
-  //     result => {
-  //       setCouponResult(result);
-  //       setResult(result.message);
-  //     },
-  //     (code, message) => {
-  //       console.log('Coupon callback error:', code, message);
-  //       Alert.alert('Coupon Error', `${code}: ${message}`);
-  //     },
-  //   );
-  // };
+  // Function to handle validating coupon with callback in native module
+  const handleValidateCouponWithCallback = () => {
+    NativeDebugModule.validateCouponWithCallback(
+      'SARA10',
+      2000,
+      result => {
+        setCouponResult(result);
+        setResult(result.message);
+      },
+      (code, message) => {
+        console.log('Coupon callback error:', code, message);
+        Alert.alert('Coupon Error', `${code}: ${message}`);
+      },
+    );
+  };
 
   // Function to handle checking and requesting camera permission
   const handleCheckCameraPermission = async () => {
@@ -280,6 +281,31 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle opening full-size camera
+  const handleOpenCameraFullSize = async () => {
+    try {
+      const result = await NativeDebugModule.openCameraFullSize();
+
+      setFullSizeCameraResult(result);
+      setResult(result.message);
+    } catch (error) {
+      const nativeError = error as {
+        code?: string;
+        message?: string;
+      };
+
+      console.log('Open full-size camera error raw:', error);
+      console.log('Open full-size camera error code:', nativeError.code);
+      console.log('Open full-size camera error message:', nativeError.message);
+
+      Alert.alert(
+        'Full-size Camera Error',
+        `${nativeError.code ?? 'UNKNOWN'}: ${
+          nativeError.message ?? 'Failed to open full-size camera'
+        }`,
+      );
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -373,7 +399,13 @@ function App(): React.JSX.Element {
               onPress={handleOpenCamera}
             />
           </View>
-
+          {/*Open Full-size Camera From Kotlin*/}
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Open Full-size Camera From Kotlin"
+              onPress={handleOpenCameraFullSize}
+            />
+          </View>
           {/*Result*/}
           <Text style={styles.resultTitle}>Result:</Text>
           <Text style={styles.result}>{result}</Text>
@@ -460,6 +492,7 @@ function App(): React.JSX.Element {
               <Text>Source: {cameraPermission.source}</Text>
             </View>
           )}
+          {/*Display Camera Result*/}
           {cameraResult && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Camera Result From Kotlin</Text>
@@ -468,6 +501,20 @@ function App(): React.JSX.Element {
               <Text>Width: {cameraResult.width}</Text>
               <Text>Height: {cameraResult.height}</Text>
               <Text>Source: {cameraResult.source}</Text>
+            </View>
+          )}
+          {/*Display Full-size Camera Result*/}
+          {fullSizeCameraResult && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Full-size Camera Result</Text>
+              <Text>
+                Success: {fullSizeCameraResult.success ? 'Yes' : 'No'}
+              </Text>
+              <Text>Message: {fullSizeCameraResult.message}</Text>
+              <Text>File Name: {fullSizeCameraResult.fileName}</Text>
+              <Text>File Path: {fullSizeCameraResult.filePath}</Text>
+              <Text>File URI: {fullSizeCameraResult.fileUri}</Text>
+              <Text>Source: {fullSizeCameraResult.source}</Text>
             </View>
           )}
         </View>
