@@ -4,6 +4,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableMap
 
 class NativeDebugModule(
     private val reactContext: ReactApplicationContext
@@ -139,5 +140,66 @@ class NativeDebugModule(
                 error
             )
         }
+    }
+    @ReactMethod
+    fun createOrderFromMap(
+        orderInput: ReadableMap,
+        promise: Promise
+    ) {
+        try {
+            val orderId = orderInput.getOptionalString("orderId") ?: ""
+            val customerName = orderInput.getOptionalString("customerName") ?: "Guest Customer"
+            val amount = orderInput.getOptionalDouble("amount") ?: 0.0
+            val status = orderInput.getOptionalString("status") ?: "PENDING"
+
+            if (orderId.isBlank()) {
+                promise.reject(
+                    "MISSING_ORDER_ID",
+                    "Order ID is required"
+                )
+                return
+            }
+
+            if (amount <= 0.0) {
+                promise.reject(
+                    "INVALID_AMOUNT",
+                    "Amount must be greater than 0"
+                )
+                return
+            }
+
+            val responseMap = Arguments.createMap().apply {
+                putString("orderId", orderId)
+                putString("customerName", customerName)
+                putDouble("amount", amount)
+                putString("status", status.uppercase())
+                putBoolean("isHighValue", amount >= 5000.0)
+                putString("source", "React Native object parsed by Kotlin")
+                putString("message", "Order received successfully in Kotlin")
+            }
+
+            promise.resolve(responseMap)
+        } catch (error: Exception) {
+            promise.reject(
+                "CREATE_ORDER_FROM_MAP_ERROR",
+                error.message,
+                error
+            )
+        }
+    }
+}
+private fun ReadableMap.getOptionalString(key: String): String? {
+    return if (hasKey(key) && !isNull(key)) {
+        getString(key)
+    } else {
+        null
+    }
+}
+
+private fun ReadableMap.getOptionalDouble(key: String): Double? {
+    return if (hasKey(key) && !isNull(key)) {
+        getDouble(key)
+    } else {
+        null
     }
 }

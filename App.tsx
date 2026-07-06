@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import NativeDebugModule, {
+  NativeOrderInput,
   NativeOrderItem,
   NativeOrderSummary,
 } from './src/native/NativeDebugModule';
@@ -72,6 +73,24 @@ function App(): React.JSX.Element {
     }
   };
 
+  const handleCreateOrderFromMap = async () => {
+    try {
+      const input: NativeOrderInput = {
+        orderId: 'ORD-6001',
+        customerName: 'Mehedi Hasan',
+        amount: 3500,
+        status: 'processing',
+      };
+
+      const response = await NativeDebugModule.createOrderFromMap(input);
+
+      setOrderSummary(response);
+      setResult(response.message);
+    } catch (error) {
+      console.log('Create order from map error:', error);
+      Alert.alert('Native Error', 'Failed to send order object to Kotlin');
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -104,6 +123,12 @@ function App(): React.JSX.Element {
             <Button
               title="Get Recent Orders From Kotlin"
               onPress={handleGetRecentOrders}
+            />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Send Order Object To Kotlin"
+              onPress={handleCreateOrderFromMap}
             />
           </View>
           <Text style={styles.resultTitle}>Result:</Text>

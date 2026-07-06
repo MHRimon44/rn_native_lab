@@ -18,11 +18,23 @@ export type NativeOrderItem = {
   source: string;
 };
 
+export type NativeOrderInput = {
+  orderId: string;
+  customerName?: string;
+  amount: number;
+  status?: string;
+};
+
 type NativeDebugModuleType = {
   getNativeGreeting(name: string): Promise<string>;
   openDebugScreen(orderId: string, amount: string): Promise<boolean>;
   getOrderSummary(orderId: string, amount: number): Promise<NativeOrderSummary>;
   getRecentOrders(maxCount: number): Promise<NativeOrderItem[]>;
+  createOrderFromMap(input: NativeOrderInput): Promise<
+    NativeOrderSummary & {
+      message: string;
+    }
+  >;
 };
 
 const { NativeDebugModule } = NativeModules;
