@@ -258,10 +258,10 @@ class NativeDebugModule(
     }
 
    override fun onActivityResult(
-        activity: Activity,
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?
+    activity: Activity,
+    requestCode: Int,
+    resultCode: Int,
+    data: Intent?
     ) {
         if (requestCode == CAMERA_CAPTURE_REQUEST_CODE) {
             val promise = cameraCapturePromise
@@ -343,6 +343,7 @@ class NativeDebugModule(
             return
         }
     }
+
 
     private fun createPermissionResultMap(
         permission: String,

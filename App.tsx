@@ -5,6 +5,7 @@ import {
   Alert,
   Button,
   DeviceEventEmitter,
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -50,6 +51,11 @@ function App(): React.JSX.Element {
     useState<NativeCameraCaptureResult | null>(null);
   const [fullSizeCameraResult, setFullSizeCameraResult] =
     useState<NativeFullSizeCameraResult | null>(null);
+
+  const capturedImageUri = fullSizeCameraResult?.filePath
+    ? `file://${fullSizeCameraResult.filePath}`
+    : fullSizeCameraResult?.fileUri ?? null;
+
   // Function to handle getting greeting from native module
   const handleGreeting = async () => {
     try {
@@ -306,6 +312,7 @@ function App(): React.JSX.Element {
       );
     }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -515,6 +522,14 @@ function App(): React.JSX.Element {
               <Text>File Path: {fullSizeCameraResult.filePath}</Text>
               <Text>File URI: {fullSizeCameraResult.fileUri}</Text>
               <Text>Source: {fullSizeCameraResult.source}</Text>
+
+              {capturedImageUri && fullSizeCameraResult.success && (
+                <Image
+                  source={{ uri: capturedImageUri }}
+                  style={styles.capturedImage}
+                  resizeMode="cover"
+                />
+              )}
             </View>
           )}
         </View>
@@ -565,6 +580,12 @@ const styles = StyleSheet.create({
   orderRow: {
     paddingVertical: 12,
     borderBottomWidth: 1,
+  },
+  capturedImage: {
+    width: '100%',
+    height: 300,
+    marginTop: 16,
+    borderRadius: 8,
   },
 });
 
