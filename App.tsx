@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
+  DeviceEventEmitter,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -10,10 +11,12 @@ import {
 } from 'react-native';
 
 import NativeDebugModule, {
+  NativeDebugEventPayload,
   NativeOrderArraySummary,
   NativeOrderInput,
   NativeOrderItem,
   NativeOrderSummary,
+  OrderSyncProgressPayload,
 } from './src/native/NativeDebugModule';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,7 +28,15 @@ function App(): React.JSX.Element {
   const [recentOrders, setRecentOrders] = useState<NativeOrderItem[]>([]);
   const [arraySummary, setArraySummary] =
     useState<NativeOrderArraySummary | null>(null);
+  const [nativeEventMessage, setNativeEventMessage] = useState<string>(
+    'No native event received yet',
+  );
 
+  const [syncProgress, setSyncProgress] = useState<number>(0);
+
+  const [syncMessage, setSyncMessage] = useState<string>(
+    'Order sync not started',
+  );
   const handleGreeting = async () => {
     try {
       const message = await NativeDebugModule.getNativeGreeting('SaRa');
@@ -128,6 +139,58 @@ function App(): React.JSX.Element {
       Alert.alert('Native Error', 'Failed to summarize order array in Kotlin');
     }
   };
+
+  useEffect(() => {
+    const debugEventSubscription = DeviceEventEmitter.addListener(
+      'NativeDebugEvent',
+      (event: NativeDebugEventPayload) => {
+        setNativeEventMessage(`${event.message} | Source: ${event.source}`);
+      },
+    );
+
+    const syncProgressSubscription = DeviceEventEmitter.addListener(
+      'OrderSyncProgress',
+      (event: OrderSyncProgressPayload) => {
+        setSyncProgress(event.progress);
+        setSyncMessage(
+          `${event.message} (${event.progress}%) for ${event.orderId}`,
+        );
+      },
+    );
+
+    return () => {
+      debugEventSubscription.remove();
+      syncProgressSubscription.remove();
+    };
+  }, []);
+
+  const handleEmitTestEvent = async () => {
+    try {
+      const emitted = await NativeDebugModule.emitTestEvent(
+        'Hello React Native, this event came from Kotlin',
+      );
+
+      setResult(`Event emitted: ${emitted}`);
+    } catch (error) {
+      console.log('Emit event error:', error);
+      Alert.alert('Native Error', 'Failed to emit native event');
+    }
+  };
+
+  const handleStartFakeOrderSync = async () => {
+    try {
+      setSyncProgress(0);
+      setSyncMessage('Starting order sync...');
+
+      const message = await NativeDebugModule.startFakeOrderSync('ORD-8001');
+
+      setResult(message);
+    } catch (error) {
+      console.log('Start fake order sync error:', error);
+      Alert.alert('Native Error', 'Failed to start fake order sync');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -173,6 +236,29 @@ function App(): React.JSX.Element {
               title="Send Order Array To Kotlin"
               onPress={handleSummarizeOrdersFromArray}
             />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Emit Event From Kotlin"
+              onPress={handleEmitTestEvent}
+            />
+          </View>
+
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Start Kotlin Order Sync Events"
+              onPress={handleStartFakeOrderSync}
+            />
+          </View>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Kotlin Event Listener</Text>
+            <Text>{nativeEventMessage}</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Order Sync Progress</Text>
+            <Text>Progress: {syncProgress}%</Text>
+            <Text>{syncMessage}</Text>
           </View>
           <Text style={styles.resultTitle}>Result:</Text>
           <Text style={styles.result}>{result}</Text>

@@ -33,7 +33,18 @@ export type NativeOrderArraySummary = {
   source: string;
   message: string;
 };
+export type NativeDebugEventPayload = {
+  message: string;
+  source: string;
+  timestamp: number;
+};
 
+export type OrderSyncProgressPayload = {
+  orderId: string;
+  progress: number;
+  isCompleted: boolean;
+  message: string;
+};
 type NativeDebugModuleType = {
   getNativeGreeting(name: string): Promise<string>;
   openDebugScreen(orderId: string, amount: string): Promise<boolean>;
@@ -47,6 +58,8 @@ type NativeDebugModuleType = {
   summarizeOrdersFromArray(
     orders: NativeOrderInput[],
   ): Promise<NativeOrderArraySummary>;
+  emitTestEvent(message: string): Promise<boolean>;
+  startFakeOrderSync(orderId: string): Promise<string>;
 };
 
 const { NativeDebugModule } = NativeModules;

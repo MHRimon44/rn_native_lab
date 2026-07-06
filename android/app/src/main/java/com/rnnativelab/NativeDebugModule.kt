@@ -6,6 +6,10 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableArray
+import android.os.Handler
+import android.os.Looper
+import com.facebook.react.bridge.WritableMap
+import com.facebook.react.modules.core.DeviceEventManagerModule
 
 class NativeDebugModule(
     private val reactContext: ReactApplicationContext
@@ -228,6 +232,74 @@ class NativeDebugModule(
         } catch (error: Exception) {
             promise.reject(
                 "SUMMARIZE_ORDERS_ERROR",
+                error.message,
+                error
+            )
+        }
+    }
+        private fun sendEvent(eventName: String, params: WritableMap?) {
+        reactContext
+            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            .emit(eventName, params)
+    }
+    @ReactMethod
+    fun emitTestEvent(message: String, promise: Promise) {
+        try {
+            val eventMap = Arguments.createMap().apply {
+                putString("message", message)
+                putString("source", "Kotlin EventEmitter")
+                putDouble("timestamp", System.currentTimeMillis().toDouble())
+            }
+
+            sendEvent("NativeDebugEvent", eventMap)
+
+            promise.resolve(true)
+        } catch (error: Exception) {
+            promise.reject(
+                "EMIT_TEST_EVENT_ERROR",
+                error.message,
+                error
+            )
+        }
+    }
+    @ReactMethod
+    fun startFakeOrderSync(orderId: String, promise: Promise) {
+        try {
+            if (orderId.isBlank()) {
+                promise.reject(
+                    "MISSING_ORDER_ID",
+                    "Order ID is required"
+                )
+                return
+            }
+
+            val handler = Handler(Looper.getMainLooper())
+            val progressList = listOf(0, 25, 50, 75, 100)
+
+            progressList.forEachIndexed { index, progress ->
+                handler.postDelayed({
+                    val eventMap = Arguments.createMap().apply {
+                        putString("orderId", orderId)
+                        putInt("progress", progress)
+                        putBoolean("isCompleted", progress == 100)
+                        putString(
+                            "message",
+                            if (progress == 100) {
+                                "Order sync completed"
+                            } else {
+                                "Order sync in progress"
+                            }
+                        )
+                    }
+
+                    sendEvent("OrderSyncProgress", eventMap)
+                }, index * 700L)
+            }
+
+            promise.resolve("Order sync started for $orderId")
+        } catch (error: Exception) {
+            promise.reject(
+                "START_ORDER_SYNC_ERROR",
                 error.message,
                 error
             )
