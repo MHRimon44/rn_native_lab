@@ -14,7 +14,8 @@ class MainApplication : Application(), ReactApplication {
       context = applicationContext,
       packageList =
         PackageList(this).packages.apply {
-         add(NativeDebugPackage())
+          add(NativeDebugPackage())
+          add(NativeDevicePackage())
         },
     )
   }

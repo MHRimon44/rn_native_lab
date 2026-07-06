@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-shadow */
 import React, { useEffect, useState } from 'react';
 import {
@@ -12,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import NativeDebugModule, {
   NativeCameraCaptureResult,
   NativeCouponResult,
@@ -24,10 +23,9 @@ import NativeDebugModule, {
   NativeOrderSummary,
   NativePermissionResult,
   OrderSyncProgressPayload,
-} from './src/native/NativeDebugModule';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from '../native/NativeDebugModule';
 
-function App(): React.JSX.Element {
+function NativeDebugScreen(): React.JSX.Element {
   const [result, setResult] = useState<string>('No native result yet');
   const [orderSummary, setOrderSummary] = useState<NativeOrderSummary | null>(
     null,
@@ -319,71 +317,70 @@ function App(): React.JSX.Element {
 
       <ScrollView contentInsetAdjustmentBehavior="automatic">
         <View style={styles.content}>
-          <Text style={styles.title}>RN Native Lab</Text>
-
+          <Text style={styles.title}>Native Debug Lab</Text>
           <Text style={styles.description}>
             React Native → Kotlin NativeModule → Android Activity
           </Text>
           {/*Greeting button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button title="Get Greeting From Kotlin" onPress={handleGreeting} />
-          </View> */}
+          </View>
           {/*Open Native Screen button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button
               title="Open Native Android Screen"
               onPress={handleOpenNativeScreen}
             />
-          </View> */}
+          </View>
           {/*Get Order Summary button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button
               title="Get Order Summary From Kotlin"
               onPress={handleGetOrderSummary}
             />
-          </View> */}
+          </View>
           {/*Get Recent Orders button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button
               title="Get Recent Orders From Kotlin"
               onPress={handleGetRecentOrders}
             />
-          </View> */}
+          </View>
           {/*Send Order Object To Kotlin button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button
               title="Send Order Object To Kotlin"
               onPress={handleCreateOrderFromMap}
             />
-          </View> */}
+          </View>
           {/*Send Order Array To Kotlin button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button
               title="Send Order Array To Kotlin"
               onPress={handleSummarizeOrdersFromArray}
             />
           </View>
           {/*Emit Event From Kotlin button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button
               title="Emit Event From Kotlin"
               onPress={handleEmitTestEvent}
             />
-          </View> */}
+          </View>
           {/*Start Kotlin Order Sync Events button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button
               title="Start Kotlin Order Sync Events"
               onPress={handleStartFakeOrderSync}
             />
-          </View> */}
+          </View>
           {/*Validate Coupon With Kotlin Callback button*/}
-          {/* <View style={styles.buttonWrapper}>
+          <View style={styles.buttonWrapper}>
             <Button
               title="Validate Coupon With Kotlin Callback"
               onPress={handleValidateCouponWithCallback}
             />
-          </View> */}
+          </View>
           {/*Check Camera Permission*/}
           <View style={styles.buttonWrapper}>
             <Button
@@ -398,7 +395,6 @@ function App(): React.JSX.Element {
               onPress={handleRequestCameraPermission}
             />
           </View>
-
           {/*Open Camera From Kotlin*/}
           <View style={styles.buttonWrapper}>
             <Button
@@ -417,23 +413,22 @@ function App(): React.JSX.Element {
           <Text style={styles.resultTitle}>Result:</Text>
           <Text style={styles.result}>{result}</Text>
           {/*Kotlin Event Listener*/}
-          {/* {nativeEventMessage && (
+          {nativeEventMessage && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Kotlin Event Listener</Text>
               <Text>{nativeEventMessage}</Text>
             </View>
-          )} */}
+          )}
           {/*Kotlin Order Sync Progress*/}
-          {/* {syncProgress !== null && (
+          {syncProgress !== null && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Order Sync Progress</Text>
               <Text>Progress: {syncProgress}%</Text>
               <Text>{syncMessage}</Text>
             </View>
-          )} */}
-
+          )}
           {/*Display Order Summary*/}
-          {/* {orderSummary && (
+          {orderSummary && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Native Order Summary</Text>
               <Text>Order ID: {orderSummary.orderId}</Text>
@@ -443,9 +438,9 @@ function App(): React.JSX.Element {
               <Text>High Value: {orderSummary.isHighValue ? 'Yes' : 'No'}</Text>
               <Text>Source: {orderSummary.source}</Text>
             </View>
-          )} */}
+          )}
           {/*Display Recent Orders*/}
-          {/* {recentOrders.length > 0 && (
+          {recentOrders.length > 0 && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Recent Orders From Kotlin</Text>
 
@@ -462,7 +457,7 @@ function App(): React.JSX.Element {
             </View>
           )}
           {/*Display Order Array Summary*/}
-          {/* {arraySummary && (
+          {arraySummary && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>
                 Order Array Summary From Kotlin
@@ -473,9 +468,9 @@ function App(): React.JSX.Element {
               <Text>Delivered Orders: {arraySummary.deliveredOrders}</Text>
               <Text>Source: {arraySummary.source}</Text>
             </View>
-          )} */}
-          {/*Display Coupon Result*/}
-          {/* {couponResult && (
+          )}{' '}
+          *{/*Display Coupon Result*/}
+          {couponResult && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>
                 Coupon Result From Kotlin Callback
@@ -487,7 +482,7 @@ function App(): React.JSX.Element {
               <Text>Final Amount: {couponResult.finalAmount}</Text>
               <Text>Source: {couponResult.source}</Text>
             </View>
-          )} */}
+          )}
           {/*Display Camera Permission Result*/}
           {cameraPermission && (
             <View style={styles.card}>
@@ -589,4 +584,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default NativeDebugScreen;
