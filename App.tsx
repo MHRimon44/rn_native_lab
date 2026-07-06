@@ -9,11 +9,16 @@ import {
   View,
 } from 'react-native';
 
-import NativeDebugModule from './src/native/NativeDebugModule';
+import NativeDebugModule, {
+  NativeOrderSummary,
+} from './src/native/NativeDebugModule';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 function App(): React.JSX.Element {
   const [result, setResult] = useState<string>('No native result yet');
+  const [orderSummary, setOrderSummary] = useState<NativeOrderSummary | null>(
+    null,
+  );
 
   const handleGreeting = async () => {
     try {
@@ -39,6 +44,21 @@ function App(): React.JSX.Element {
     }
   };
 
+  const handleGetOrderSummary = async () => {
+    try {
+      const summary = await NativeDebugModule.getOrderSummary(
+        'ORD-4001',
+        2500.0,
+      );
+
+      setOrderSummary(summary);
+      setResult(`Order summary received from ${summary.source}`);
+    } catch (error) {
+      console.log('Order summary error:', error);
+      Alert.alert('Native Error', 'Failed to get order summary from Kotlin');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -61,9 +81,26 @@ function App(): React.JSX.Element {
               onPress={handleOpenNativeScreen}
             />
           </View>
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Get Order Summary From Kotlin"
+              onPress={handleGetOrderSummary}
+            />
+          </View>
 
           <Text style={styles.resultTitle}>Result:</Text>
           <Text style={styles.result}>{result}</Text>
+          {orderSummary && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Native Order Summary</Text>
+              <Text>Order ID: {orderSummary.orderId}</Text>
+              <Text>Customer: {orderSummary.customerName}</Text>
+              <Text>Amount: {orderSummary.amount}</Text>
+              <Text>Status: {orderSummary.status}</Text>
+              <Text>High Value: {orderSummary.isHighValue ? 'Yes' : 'No'}</Text>
+              <Text>Source: {orderSummary.source}</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -97,6 +134,17 @@ const styles = StyleSheet.create({
   result: {
     fontSize: 16,
     marginTop: 8,
+  },
+  card: {
+    marginTop: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
   },
 });
 

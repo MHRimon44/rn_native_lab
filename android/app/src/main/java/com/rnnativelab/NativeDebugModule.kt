@@ -1,5 +1,5 @@
 package com.rnnativelab
-
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -48,6 +48,32 @@ class NativeDebugModule(
         } catch (error: Exception) {
             promise.reject(
                 "OPEN_DEBUG_SCREEN_ERROR",
+                error.message,
+                error
+            )
+        }
+    }
+
+    @ReactMethod
+    fun getOrderSummary(
+        orderId: String,
+        amount: Double,
+        promise: Promise
+    ) {
+        try {
+            val orderMap = Arguments.createMap().apply {
+                putString("orderId", orderId)
+                putString("customerName", "SaRa Customer")
+                putDouble("amount", amount)
+                putString("status", "DELIVERED")
+                putBoolean("isHighValue", amount >= 5000.0)
+                putString("source", "Kotlin NativeModule")
+            }
+
+            promise.resolve(orderMap)
+        } catch (error: Exception) {
+            promise.reject(
+                "ORDER_SUMMARY_ERROR",
                 error.message,
                 error
             )

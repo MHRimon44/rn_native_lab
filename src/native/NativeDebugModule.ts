@@ -1,8 +1,18 @@
 import { NativeModules, Platform } from 'react-native';
 
+export type NativeOrderSummary = {
+  orderId: string;
+  customerName: string;
+  amount: number;
+  status: string;
+  isHighValue: boolean;
+  source: string;
+};
+
 type NativeDebugModuleType = {
   getNativeGreeting(name: string): Promise<string>;
   openDebugScreen(orderId: string, amount: string): Promise<boolean>;
+  getOrderSummary(orderId: string, amount: number): Promise<NativeOrderSummary>;
 };
 
 const { NativeDebugModule } = NativeModules;
