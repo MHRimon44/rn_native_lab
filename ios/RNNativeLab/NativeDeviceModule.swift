@@ -27,7 +27,7 @@ class NativeDeviceModule: NSObject {
     _ resolve: RCTPromiseResolveBlock,
     rejecter reject: RCTPromiseRejectBlock
   ) {
-    let deviceModel = UIDevice.current.model
+    let deviceModel = getExactDeviceModel()
     resolve(deviceModel)
   }
 
@@ -83,7 +83,7 @@ class NativeDeviceModule: NSObject {
 
     let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
-    let deviceModel = UIDevice.current.model
+    let deviceModel = getExactDeviceModel()
     let osVersion = "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)"
 
     let batteryLevelValue = UIDevice.current.batteryLevel
@@ -107,6 +107,33 @@ class NativeDeviceModule: NSObject {
 
   @objc
   static func requiresMainQueueSetup() -> Bool {
-    return false
+      return false
+    }
+
+  private func getExactDeviceModel() -> String {
+  #if targetEnvironment(simulator)
+    let simulatorModelIdentifier =
+      ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] ?? "Unknown Simulator"
+
+    let simulatorName =
+      ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] ?? "iOS Simulator"
+
+    return "\(simulatorName) (\(simulatorModelIdentifier))"
+    #else
+    var systemInfo = utsname()
+    uname(&systemInfo)
+
+    let machineMirror = Mirror(reflecting: systemInfo.machine)
+
+    let identifier = machineMirror.children.reduce("") { result, element in
+      guard let value = element.value as? Int8, value != 0 else {
+        return result
+      }
+
+      return result + String(UnicodeScalar(UInt8(value)))
+    }
+
+    return identifier
+    #endif
   }
 }
