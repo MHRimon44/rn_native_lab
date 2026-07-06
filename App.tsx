@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 
 import NativeDebugModule, {
+  NativeCameraCaptureResult,
   // NativeCouponResult,
   // NativeDebugEventPayload,
   // NativeOrderArraySummary,
@@ -46,7 +47,8 @@ function App(): React.JSX.Element {
   // );
   const [cameraPermission, setCameraPermission] =
     useState<NativePermissionResult | null>(null);
-
+  const [cameraResult, setCameraResult] =
+    useState<NativeCameraCaptureResult | null>(null);
   // Function to handle getting greeting from native module
   // const handleGreeting = async () => {
   //   try {
@@ -252,6 +254,32 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle opening camera
+  const handleOpenCamera = async () => {
+    try {
+      const result = await NativeDebugModule.openCamera();
+
+      setCameraResult(result);
+      setResult(result.message);
+    } catch (error) {
+      const nativeError = error as {
+        code?: string;
+        message?: string;
+      };
+
+      console.log('Open camera error raw:', error);
+      console.log('Open camera error code:', nativeError.code);
+      console.log('Open camera error message:', nativeError.message);
+
+      Alert.alert(
+        'Camera Error',
+        `${nativeError.code ?? 'UNKNOWN'}: ${
+          nativeError.message ?? 'Failed to open camera'
+        }`,
+      );
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -323,20 +351,29 @@ function App(): React.JSX.Element {
               onPress={handleValidateCouponWithCallback}
             />
           </View> */}
-
+          {/*Check Camera Permission*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Check Camera Permission"
               onPress={handleCheckCameraPermission}
             />
           </View>
-
+          {/*Request Camera Permission*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Request Camera Permission"
               onPress={handleRequestCameraPermission}
             />
           </View>
+
+          {/*Open Camera From Kotlin*/}
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Open Camera From Kotlin"
+              onPress={handleOpenCamera}
+            />
+          </View>
+
           {/*Result*/}
           <Text style={styles.resultTitle}>Result:</Text>
           <Text style={styles.result}>{result}</Text>
@@ -421,6 +458,16 @@ function App(): React.JSX.Element {
               <Text>Granted: {cameraPermission.granted ? 'Yes' : 'No'}</Text>
               <Text>Message: {cameraPermission.message}</Text>
               <Text>Source: {cameraPermission.source}</Text>
+            </View>
+          )}
+          {cameraResult && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Camera Result From Kotlin</Text>
+              <Text>Success: {cameraResult.success ? 'Yes' : 'No'}</Text>
+              <Text>Message: {cameraResult.message}</Text>
+              <Text>Width: {cameraResult.width}</Text>
+              <Text>Height: {cameraResult.height}</Text>
+              <Text>Source: {cameraResult.source}</Text>
             </View>
           )}
         </View>

@@ -64,6 +64,14 @@ export type NativePermissionResult = {
   source: string;
 };
 
+export type NativeCameraCaptureResult = {
+  success: boolean;
+  message: string;
+  width: number;
+  height: number;
+  source: string;
+};
+
 type NativeDebugModuleType = {
   getNativeGreeting(name: string): Promise<string>;
   openDebugScreen(orderId: string, amount: string): Promise<boolean>;
@@ -89,6 +97,7 @@ type NativeDebugModuleType = {
 
   checkCameraPermission(): Promise<NativePermissionResult>;
   requestCameraPermission(): Promise<NativePermissionResult>;
+  openCamera(): Promise<NativeCameraCaptureResult>;
 };
 
 const { NativeDebugModule } = NativeModules;

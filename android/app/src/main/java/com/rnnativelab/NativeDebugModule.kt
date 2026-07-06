@@ -3,6 +3,10 @@ package com.rnnativelab
 import android.os.Handler
 import android.os.Looper
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Bitmap
+import android.provider.MediaStore
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 
@@ -15,6 +19,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.Callback
+import com.facebook.react.bridge.ActivityEventListener
 
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
@@ -22,10 +27,147 @@ import com.facebook.react.modules.core.DeviceEventManagerModule
 
 class NativeDebugModule(
     private val reactContext: ReactApplicationContext
-) : ReactContextBaseJavaModule(reactContext), PermissionListener {
+) : ReactContextBaseJavaModule(reactContext), PermissionListener, ActivityEventListener {
 
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 2001
+        private const val CAMERA_CAPTURE_REQUEST_CODE = 3001
+    }
+
+    private var cameraPermissionPromise: Promise? = null
+    private var cameraCapturePromise: Promise? = null
+    
+    init {
+        reactContext.addActivityEventListener(this)
+    }
+
+    private fun createCameraResultMap(
+        success: Boolean,
+        message: String,
+        width: Int = 0,
+        height: Int = 0
+    ): WritableMap {
+        return Arguments.createMap().apply {
+            putBoolean("success", success)
+            putString("message", message)
+            putInt("width", width)
+            putInt("height", height)
+            putString("source", "Kotlin Camera Intent")
+        }
+    }
+
+   @ReactMethod
+    fun openCamera(promise: Promise) {
+        try {
+            val permissionGranted = ContextCompat.checkSelfPermission(
+                reactContext,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!permissionGranted) {
+                promise.reject(
+                    "CAMERA_PERMISSION_NOT_GRANTED",
+                    "Camera permission is required before opening camera"
+                )
+                return
+            }
+
+            val activity = getCurrentActivity()
+
+            if (activity == null) {
+                promise.reject(
+                    "NO_ACTIVITY",
+                    "Current Android activity is not available"
+                )
+                return
+            }
+
+            if (cameraCapturePromise != null) {
+                promise.reject(
+                    "CAMERA_CAPTURE_IN_PROGRESS",
+                    "Another camera capture request is already running"
+                )
+                return
+            }
+
+            val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+
+            cameraCapturePromise = promise
+
+            try {
+                activity.startActivityForResult(
+                    cameraIntent,
+                    CAMERA_CAPTURE_REQUEST_CODE
+                )
+            } catch (error: Exception) {
+                cameraCapturePromise = null
+
+                promise.reject(
+                    "NO_CAMERA_APP",
+                    "No camera app is available on this emulator/device",
+                    error
+                )
+            }
+        } catch (error: Exception) {
+            cameraCapturePromise = null
+
+            promise.reject(
+                "OPEN_CAMERA_ERROR",
+                error.message ?: "Failed to open camera",
+                error
+            )
+        }
+    }
+        
+    override fun onNewIntent(intent: Intent) {
+        // Not needed for camera capture in this lesson.
+    }
+
+    override fun onActivityResult(
+        activity: Activity,
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        if (requestCode != CAMERA_CAPTURE_REQUEST_CODE) {
+            return
+        }
+
+        val promise = cameraCapturePromise
+        cameraCapturePromise = null
+
+        if (promise == null) {
+            return
+        }
+
+        if (resultCode != Activity.RESULT_OK) {
+            val resultMap = createCameraResultMap(
+                success = false,
+                message = "Camera capture cancelled"
+            )
+
+            promise.resolve(resultMap)
+            return
+        }
+
+        val bitmap = data?.extras?.get("data") as? Bitmap
+
+        if (bitmap == null) {
+            promise.reject(
+                "NO_IMAGE_DATA",
+                "Camera did not return image data"
+            )
+            return
+        }
+
+        val resultMap = createCameraResultMap(
+            success = true,
+            message = "Photo captured successfully",
+            width = bitmap.width,
+            height = bitmap.height
+        )
+
+        promise.resolve(resultMap)
     }
 
     private fun createPermissionResultMap(
@@ -41,8 +183,6 @@ class NativeDebugModule(
             putString("source", "Kotlin Permission API")
         }
     }
-
-    private var cameraPermissionPromise: Promise? = null
 
     @ReactMethod
     fun checkCameraPermission(promise: Promise) {
