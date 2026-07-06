@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import NativeDebugModule, {
+  NativeOrderItem,
   NativeOrderSummary,
 } from './src/native/NativeDebugModule';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ function App(): React.JSX.Element {
   const [orderSummary, setOrderSummary] = useState<NativeOrderSummary | null>(
     null,
   );
-
+  const [recentOrders, setRecentOrders] = useState<NativeOrderItem[]>([]);
   const handleGreeting = async () => {
     try {
       const message = await NativeDebugModule.getNativeGreeting('SaRa');
@@ -59,6 +60,18 @@ function App(): React.JSX.Element {
     }
   };
 
+  const handleGetRecentOrders = async () => {
+    try {
+      const orders = await NativeDebugModule.getRecentOrders(4);
+
+      setRecentOrders(orders);
+      setResult(`Received ${orders.length} orders from Kotlin`);
+    } catch (error) {
+      console.log('Recent orders error:', error);
+      Alert.alert('Native Error', 'Failed to get recent orders from Kotlin');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -87,7 +100,12 @@ function App(): React.JSX.Element {
               onPress={handleGetOrderSummary}
             />
           </View>
-
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Get Recent Orders From Kotlin"
+              onPress={handleGetRecentOrders}
+            />
+          </View>
           <Text style={styles.resultTitle}>Result:</Text>
           <Text style={styles.result}>{result}</Text>
           {orderSummary && (
@@ -99,6 +117,22 @@ function App(): React.JSX.Element {
               <Text>Status: {orderSummary.status}</Text>
               <Text>High Value: {orderSummary.isHighValue ? 'Yes' : 'No'}</Text>
               <Text>Source: {orderSummary.source}</Text>
+            </View>
+          )}
+          {recentOrders.length > 0 && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Recent Orders From Kotlin</Text>
+
+              {recentOrders.map(order => (
+                <View key={order.orderId} style={styles.orderRow}>
+                  <Text>Order ID: {order.orderId}</Text>
+                  <Text>Customer: {order.customerName}</Text>
+                  <Text>Amount: {order.amount}</Text>
+                  <Text>Status: {order.status}</Text>
+                  <Text>High Value: {order.isHighValue ? 'Yes' : 'No'}</Text>
+                  <Text>Source: {order.source}</Text>
+                </View>
+              ))}
             </View>
           )}
         </View>
@@ -145,6 +179,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 8,
+  },
+  orderRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
 });
 

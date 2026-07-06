@@ -79,4 +79,65 @@ class NativeDebugModule(
             )
         }
     }
+    @ReactMethod
+    fun getRecentOrders(
+        maxCount: Double,
+        promise: Promise
+    ) {
+        try {
+            val safeCount = maxCount.toInt().coerceIn(1, 10)
+
+            val orders = listOf(
+                mapOf(
+                    "orderId" to "ORD-5001",
+                    "customerName" to "Customer 1",
+                    "amount" to 1200.0,
+                    "status" to "DELIVERED"
+                ),
+                mapOf(
+                    "orderId" to "ORD-5002",
+                    "customerName" to "Customer 2",
+                    "amount" to 6500.0,
+                    "status" to "PROCESSING"
+                ),
+                mapOf(
+                    "orderId" to "ORD-5003",
+                    "customerName" to "Customer 3",
+                    "amount" to 950.0,
+                    "status" to "PENDING"
+                ),
+                mapOf(
+                    "orderId" to "ORD-5004",
+                    "customerName" to "Customer 4",
+                    "amount" to 8000.0,
+                    "status" to "DELIVERED"
+                )
+            )
+
+            val orderArray = Arguments.createArray()
+
+            orders.take(safeCount).forEach { order ->
+                val amount = order["amount"] as Double
+
+                val orderMap = Arguments.createMap().apply {
+                    putString("orderId", order["orderId"] as String)
+                    putString("customerName", order["customerName"] as String)
+                    putDouble("amount", amount)
+                    putString("status", order["status"] as String)
+                    putBoolean("isHighValue", amount >= 5000.0)
+                    putString("source", "Kotlin WritableArray")
+                }
+
+                orderArray.pushMap(orderMap)
+            }
+
+            promise.resolve(orderArray)
+        } catch (error: Exception) {
+            promise.reject(
+                "RECENT_ORDERS_ERROR",
+                error.message,
+                error
+            )
+        }
+    }
 }
