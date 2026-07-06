@@ -64,8 +64,8 @@ class NativeDeviceModule(
     @ReactMethod
     fun getDeviceModel(promise: Promise) {
         try {
-            val model = "${Build.MANUFACTURER} ${Build.MODEL}"
-            promise.resolve(model)
+            val deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}"
+            promise.resolve(deviceModel)
         } catch (error: Exception) {
             promise.reject(
                 "GET_DEVICE_MODEL_ERROR",
@@ -92,10 +92,7 @@ class NativeDeviceModule(
     @ReactMethod
     fun getBatteryLevel(promise: Promise) {
         try {
-            val batteryIntent = reactContext.registerReceiver(
-                null,
-                IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-            )
+            val batteryIntent = getBatteryIntent()
 
             if (batteryIntent == null) {
                 promise.reject(
@@ -105,10 +102,9 @@ class NativeDeviceModule(
                 return
             }
 
-            val level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-            val scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            val batteryLevel = calculateBatteryLevel(batteryIntent)
 
-            if (level < 0 || scale <= 0) {
+            if (batteryLevel < 0.0) {
                 promise.reject(
                     "INVALID_BATTERY_INFO",
                     "Invalid battery level or scale"
@@ -116,8 +112,7 @@ class NativeDeviceModule(
                 return
             }
 
-            val batteryPercent = level * 100.0 / scale
-            promise.resolve(batteryPercent)
+            promise.resolve(batteryLevel)
         } catch (error: Exception) {
             promise.reject(
                 "GET_BATTERY_LEVEL_ERROR",
@@ -130,10 +125,7 @@ class NativeDeviceModule(
     @ReactMethod
     fun isBatteryCharging(promise: Promise) {
         try {
-            val batteryIntent = reactContext.registerReceiver(
-                null,
-                IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-            )
+            val batteryIntent = getBatteryIntent()
 
             if (batteryIntent == null) {
                 promise.reject(
@@ -143,12 +135,7 @@ class NativeDeviceModule(
                 return
             }
 
-            val status = batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-
-            val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                status == BatteryManager.BATTERY_STATUS_FULL
-
-            promise.resolve(isCharging)
+            promise.resolve(checkBatteryCharging(batteryIntent))
         } catch (error: Exception) {
             promise.reject(
                 "IS_BATTERY_CHARGING_ERROR",
@@ -173,31 +160,19 @@ class NativeDeviceModule(
                 packageInfo.versionCode.toString()
             }
 
-            val batteryIntent = reactContext.registerReceiver(
-                null,
-                IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-            )
+            val batteryIntent = getBatteryIntent()
 
             val batteryLevel = if (batteryIntent != null) {
-                val level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-                val scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-
-                if (level >= 0 && scale > 0) {
-                    level * 100.0 / scale
-                } else {
-                    -1.0
-                }
+                calculateBatteryLevel(batteryIntent)
             } else {
                 -1.0
             }
 
-            val batteryStatus = batteryIntent?.getIntExtra(
-                BatteryManager.EXTRA_STATUS,
-                -1
-            ) ?: -1
-
-            val isCharging = batteryStatus == BatteryManager.BATTERY_STATUS_CHARGING ||
-                batteryStatus == BatteryManager.BATTERY_STATUS_FULL
+            val isCharging = if (batteryIntent != null) {
+                checkBatteryCharging(batteryIntent)
+            } else {
+                false
+            }
 
             val summaryMap = Arguments.createMap().apply {
                 putString("appVersion", packageInfo.versionName ?: "Unknown")
@@ -217,5 +192,30 @@ class NativeDeviceModule(
                 error
             )
         }
+    }
+
+    private fun getBatteryIntent(): Intent? {
+        return reactContext.registerReceiver(
+            null,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+        )
+    }
+
+    private fun calculateBatteryLevel(batteryIntent: Intent): Double {
+        val level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+
+        if (level < 0 || scale <= 0) {
+            return -1.0
+        }
+
+        return level * 100.0 / scale
+    }
+
+    private fun checkBatteryCharging(batteryIntent: Intent): Boolean {
+        val status = batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+
+        return status == BatteryManager.BATTERY_STATUS_CHARGING ||
+            status == BatteryManager.BATTERY_STATUS_FULL
     }
 }

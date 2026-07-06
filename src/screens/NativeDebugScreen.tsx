@@ -468,8 +468,8 @@ function NativeDebugScreen(): React.JSX.Element {
               <Text>Delivered Orders: {arraySummary.deliveredOrders}</Text>
               <Text>Source: {arraySummary.source}</Text>
             </View>
-          )}{' '}
-          *{/*Display Coupon Result*/}
+          )}
+          {/*Display Coupon Result*/}
           {couponResult && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>
