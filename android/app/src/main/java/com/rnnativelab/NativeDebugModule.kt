@@ -1,4 +1,7 @@
 package com.rnnativelab
+
+import android.os.Handler
+import android.os.Looper
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -6,9 +9,8 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableArray
-import android.os.Handler
-import android.os.Looper
 import com.facebook.react.bridge.WritableMap
+import com.facebook.react.bridge.Callback
 import com.facebook.react.modules.core.DeviceEventManagerModule
 
 class NativeDebugModule(
@@ -302,6 +304,73 @@ class NativeDebugModule(
                 "START_ORDER_SYNC_ERROR",
                 error.message,
                 error
+            )
+        }
+    }
+
+    @ReactMethod
+    fun validateCouponWithCallback(
+        couponCode: String,
+        amount: Double,
+        successCallback: Callback,
+        errorCallback: Callback
+    ) {
+        try {
+            if (couponCode.isBlank()) {
+                errorCallback.invoke(
+                    "MISSING_COUPON_CODE",
+                    "Coupon code is required"
+                )
+                return
+            }
+
+            if (amount <= 0.0) {
+                errorCallback.invoke(
+                    "INVALID_AMOUNT",
+                    "Amount must be greater than 0"
+                )
+                return
+            }
+
+            val handler = Handler(Looper.getMainLooper())
+
+            handler.postDelayed({
+                val normalizedCouponCode = couponCode.uppercase()
+
+                val discountPercent = when (normalizedCouponCode) {
+                    "SARA10" -> 10.0
+                    "VIP20" -> 20.0
+                    "FREESHIP" -> 5.0
+                    else -> null
+                }
+
+                if (discountPercent == null) {
+                    errorCallback.invoke(
+                        "INVALID_COUPON_CODE",
+                        "Coupon code is invalid"
+                    )
+                    return@postDelayed
+                }
+
+                val discountAmount = amount * discountPercent / 100
+                val finalAmount = amount - discountAmount
+
+                val resultMap = Arguments.createMap().apply {
+                    putString("couponCode", normalizedCouponCode)
+                    putDouble("amount", amount)
+                    putDouble("discountPercent", discountPercent)
+                    putDouble("discountAmount", discountAmount)
+                    putDouble("finalAmount", finalAmount)
+                    putString("message", "Coupon applied successfully")
+                    putString("source", "Kotlin Callback")
+                }
+
+                successCallback.invoke(resultMap)
+            }, 700L)
+        } catch (error: Exception) {
+            errorCallback.invoke(
+                "COUPON_VALIDATION_ERROR",
+                error.message ?: "Failed to validate coupon"
             )
         }
     }

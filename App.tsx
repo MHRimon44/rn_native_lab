@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-shadow */
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 
 import NativeDebugModule, {
+  NativeCouponResult,
   NativeDebugEventPayload,
   NativeOrderArraySummary,
   NativeOrderInput,
@@ -31,12 +33,15 @@ function App(): React.JSX.Element {
   const [nativeEventMessage, setNativeEventMessage] = useState<string>(
     'No native event received yet',
   );
-
   const [syncProgress, setSyncProgress] = useState<number>(0);
-
   const [syncMessage, setSyncMessage] = useState<string>(
     'Order sync not started',
   );
+  const [couponResult, setCouponResult] = useState<NativeCouponResult | null>(
+    null,
+  );
+
+  // Function to handle getting greeting from native module
   const handleGreeting = async () => {
     try {
       const message = await NativeDebugModule.getNativeGreeting('SaRa');
@@ -47,6 +52,7 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle opening native screen
   const handleOpenNativeScreen = async () => {
     try {
       const opened = await NativeDebugModule.openDebugScreen(
@@ -61,6 +67,7 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle getting order summary from native module
   const handleGetOrderSummary = async () => {
     try {
       const summary = await NativeDebugModule.getOrderSummary(
@@ -76,6 +83,7 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle getting recent orders from native module
   const handleGetRecentOrders = async () => {
     try {
       const orders = await NativeDebugModule.getRecentOrders(4);
@@ -88,6 +96,7 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle creating order from map in native module
   const handleCreateOrderFromMap = async () => {
     try {
       const input: NativeOrderInput = {
@@ -107,6 +116,7 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle summarizing orders from array in native module
   const handleSummarizeOrdersFromArray = async () => {
     try {
       const orders: NativeOrderInput[] = [
@@ -140,6 +150,7 @@ function App(): React.JSX.Element {
     }
   };
 
+  // useEffect to set up event listeners for native events
   useEffect(() => {
     const debugEventSubscription = DeviceEventEmitter.addListener(
       'NativeDebugEvent',
@@ -164,6 +175,7 @@ function App(): React.JSX.Element {
     };
   }, []);
 
+  // Function to handle emitting test event from native module
   const handleEmitTestEvent = async () => {
     try {
       const emitted = await NativeDebugModule.emitTestEvent(
@@ -177,6 +189,7 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle starting fake order sync in native module
   const handleStartFakeOrderSync = async () => {
     try {
       setSyncProgress(0);
@@ -191,6 +204,21 @@ function App(): React.JSX.Element {
     }
   };
 
+  // Function to handle validating coupon with callback in native module
+  const handleValidateCouponWithCallback = () => {
+    NativeDebugModule.validateCouponWithCallback(
+      'SARA10',
+      2000,
+      result => {
+        setCouponResult(result);
+        setResult(result.message);
+      },
+      (code, message) => {
+        console.log('Coupon callback error:', code, message);
+        Alert.alert('Coupon Error', `${code}: ${message}`);
+      },
+    );
+  };
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -202,66 +230,86 @@ function App(): React.JSX.Element {
           <Text style={styles.description}>
             React Native → Kotlin NativeModule → Android Activity
           </Text>
-
+          {/*Greeting button*/}
           <View style={styles.buttonWrapper}>
             <Button title="Get Greeting From Kotlin" onPress={handleGreeting} />
           </View>
-
+          {/*Open Native Screen button*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Open Native Android Screen"
               onPress={handleOpenNativeScreen}
             />
           </View>
+          {/*Get Order Summary button*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Get Order Summary From Kotlin"
               onPress={handleGetOrderSummary}
             />
           </View>
+          {/*Get Recent Orders button*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Get Recent Orders From Kotlin"
               onPress={handleGetRecentOrders}
             />
           </View>
+          {/*Send Order Object To Kotlin button*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Send Order Object To Kotlin"
               onPress={handleCreateOrderFromMap}
             />
           </View>
+          {/*Send Order Array To Kotlin button*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Send Order Array To Kotlin"
               onPress={handleSummarizeOrdersFromArray}
             />
           </View>
+          {/*Emit Event From Kotlin button*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Emit Event From Kotlin"
               onPress={handleEmitTestEvent}
             />
           </View>
-
+          {/*Start Kotlin Order Sync Events button*/}
           <View style={styles.buttonWrapper}>
             <Button
               title="Start Kotlin Order Sync Events"
               onPress={handleStartFakeOrderSync}
             />
           </View>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Kotlin Event Listener</Text>
-            <Text>{nativeEventMessage}</Text>
+          {/*Validate Coupon With Kotlin Callback button*/}
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Validate Coupon With Kotlin Callback"
+              onPress={handleValidateCouponWithCallback}
+            />
           </View>
-
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Order Sync Progress</Text>
-            <Text>Progress: {syncProgress}%</Text>
-            <Text>{syncMessage}</Text>
-          </View>
+          {/*Result*/}
           <Text style={styles.resultTitle}>Result:</Text>
           <Text style={styles.result}>{result}</Text>
+          {/*Kotlin Event Listener*/}
+          {nativeEventMessage && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Kotlin Event Listener</Text>
+              <Text>{nativeEventMessage}</Text>
+            </View>
+          )}
+          {/*Kotlin Order Sync Progress*/}
+          {syncProgress !== null && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Order Sync Progress</Text>
+              <Text>Progress: {syncProgress}%</Text>
+              <Text>{syncMessage}</Text>
+            </View>
+          )}
+
+          {/*Display Order Summary*/}
           {orderSummary && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Native Order Summary</Text>
@@ -273,6 +321,7 @@ function App(): React.JSX.Element {
               <Text>Source: {orderSummary.source}</Text>
             </View>
           )}
+          {/*Display Recent Orders*/}
           {recentOrders.length > 0 && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Recent Orders From Kotlin</Text>
@@ -289,6 +338,7 @@ function App(): React.JSX.Element {
               ))}
             </View>
           )}
+          {/*Display Order Array Summary*/}
           {arraySummary && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>
@@ -299,6 +349,20 @@ function App(): React.JSX.Element {
               <Text>High Value Orders: {arraySummary.highValueOrders}</Text>
               <Text>Delivered Orders: {arraySummary.deliveredOrders}</Text>
               <Text>Source: {arraySummary.source}</Text>
+            </View>
+          )}
+          {/*Display Coupon Result*/}
+          {couponResult && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>
+                Coupon Result From Kotlin Callback
+              </Text>
+              <Text>Coupon Code: {couponResult.couponCode}</Text>
+              <Text>Amount: {couponResult.amount}</Text>
+              <Text>Discount Percent: {couponResult.discountPercent}%</Text>
+              <Text>Discount Amount: {couponResult.discountAmount}</Text>
+              <Text>Final Amount: {couponResult.finalAmount}</Text>
+              <Text>Source: {couponResult.source}</Text>
             </View>
           )}
         </View>

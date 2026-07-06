@@ -45,6 +45,17 @@ export type OrderSyncProgressPayload = {
   isCompleted: boolean;
   message: string;
 };
+
+export type NativeCouponResult = {
+  couponCode: string;
+  amount: number;
+  discountPercent: number;
+  discountAmount: number;
+  finalAmount: number;
+  message: string;
+  source: string;
+};
+
 type NativeDebugModuleType = {
   getNativeGreeting(name: string): Promise<string>;
   openDebugScreen(orderId: string, amount: string): Promise<boolean>;
@@ -60,6 +71,13 @@ type NativeDebugModuleType = {
   ): Promise<NativeOrderArraySummary>;
   emitTestEvent(message: string): Promise<boolean>;
   startFakeOrderSync(orderId: string): Promise<string>;
+
+  validateCouponWithCallback(
+    couponCode: string,
+    amount: number,
+    successCallback: (result: NativeCouponResult) => void,
+    errorCallback: (code: string, message: string) => void,
+  ): void;
 };
 
 const { NativeDebugModule } = NativeModules;
