@@ -2,6 +2,10 @@ package com.rnnativelab
 
 import android.os.Handler
 import android.os.Looper
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -11,11 +15,153 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.Callback
+
+import com.facebook.react.modules.core.PermissionAwareActivity
+import com.facebook.react.modules.core.PermissionListener
 import com.facebook.react.modules.core.DeviceEventManagerModule
 
 class NativeDebugModule(
     private val reactContext: ReactApplicationContext
-) : ReactContextBaseJavaModule(reactContext) {
+) : ReactContextBaseJavaModule(reactContext), PermissionListener {
+
+    companion object {
+        private const val CAMERA_PERMISSION_REQUEST_CODE = 2001
+    }
+
+    private fun createPermissionResultMap(
+        permission: String,
+        granted: Boolean,
+        message: String
+    ): WritableMap {
+        return Arguments.createMap().apply {
+            putString("permission", permission)
+            putBoolean("granted", granted)
+            putString("status", if (granted) "GRANTED" else "DENIED")
+            putString("message", message)
+            putString("source", "Kotlin Permission API")
+        }
+    }
+
+    private var cameraPermissionPromise: Promise? = null
+
+    @ReactMethod
+    fun checkCameraPermission(promise: Promise) {
+        try {
+            val granted = ContextCompat.checkSelfPermission(
+                reactContext,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+
+            val resultMap = createPermissionResultMap(
+                permission = Manifest.permission.CAMERA,
+                granted = granted,
+                message = if (granted) {
+                    "Camera permission already granted"
+                } else {
+                    "Camera permission not granted"
+                }
+            )
+
+            promise.resolve(resultMap)
+        } catch (error: Exception) {
+            promise.reject(
+                "CHECK_CAMERA_PERMISSION_ERROR",
+                error.message,
+                error
+            )
+        }
+    }
+
+    @ReactMethod
+    fun requestCameraPermission(promise: Promise) {
+        try {
+            val alreadyGranted = ContextCompat.checkSelfPermission(
+                reactContext,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (alreadyGranted) {
+                val resultMap = createPermissionResultMap(
+                    permission = Manifest.permission.CAMERA,
+                    granted = true,
+                    message = "Camera permission already granted"
+                )
+
+                promise.resolve(resultMap)
+                return
+            }
+
+            val activity = getCurrentActivity()
+
+            if (activity == null) {
+                promise.reject(
+                    "NO_ACTIVITY",
+                    "Current Android activity is not available"
+                )
+                return
+            }
+
+            if (activity !is PermissionAwareActivity) {
+                promise.reject(
+                    "ACTIVITY_NOT_PERMISSION_AWARE",
+                    "Current activity cannot request permissions"
+                )
+                return
+            }
+
+            if (cameraPermissionPromise != null) {
+                promise.reject(
+                    "PERMISSION_REQUEST_IN_PROGRESS",
+                    "Another camera permission request is already running"
+                )
+                return
+            }
+
+            cameraPermissionPromise = promise
+
+            activity.requestPermissions(
+                arrayOf(Manifest.permission.CAMERA),
+                CAMERA_PERMISSION_REQUEST_CODE,
+                this
+            )
+        } catch (error: Exception) {
+            cameraPermissionPromise = null
+
+            promise.reject(
+                "REQUEST_CAMERA_PERMISSION_ERROR",
+                error.message,
+                error
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ): Boolean {
+        if (requestCode != CAMERA_PERMISSION_REQUEST_CODE) {
+            return false
+        }
+
+        val granted = grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+
+        val resultMap = createPermissionResultMap(
+            permission = Manifest.permission.CAMERA,
+            granted = granted,
+            message = if (granted) {
+                "Camera permission granted"
+            } else {
+                "Camera permission denied"
+            }
+        )
+
+        cameraPermissionPromise?.resolve(resultMap)
+        cameraPermissionPromise = null
+
+        return true
+    }
 
     override fun getName(): String {
         return "NativeDebugModule"

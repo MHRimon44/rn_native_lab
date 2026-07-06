@@ -56,6 +56,14 @@ export type NativeCouponResult = {
   source: string;
 };
 
+export type NativePermissionResult = {
+  permission: string;
+  granted: boolean;
+  status: 'GRANTED' | 'DENIED';
+  message: string;
+  source: string;
+};
+
 type NativeDebugModuleType = {
   getNativeGreeting(name: string): Promise<string>;
   openDebugScreen(orderId: string, amount: string): Promise<boolean>;
@@ -78,6 +86,9 @@ type NativeDebugModuleType = {
     successCallback: (result: NativeCouponResult) => void,
     errorCallback: (code: string, message: string) => void,
   ): void;
+
+  checkCameraPermission(): Promise<NativePermissionResult>;
+  requestCameraPermission(): Promise<NativePermissionResult>;
 };
 
 const { NativeDebugModule } = NativeModules;
