@@ -25,6 +25,15 @@ export type NativeOrderInput = {
   status?: string;
 };
 
+export type NativeOrderArraySummary = {
+  totalOrders: number;
+  totalAmount: number;
+  highValueOrders: number;
+  deliveredOrders: number;
+  source: string;
+  message: string;
+};
+
 type NativeDebugModuleType = {
   getNativeGreeting(name: string): Promise<string>;
   openDebugScreen(orderId: string, amount: string): Promise<boolean>;
@@ -35,6 +44,9 @@ type NativeDebugModuleType = {
       message: string;
     }
   >;
+  summarizeOrdersFromArray(
+    orders: NativeOrderInput[],
+  ): Promise<NativeOrderArraySummary>;
 };
 
 const { NativeDebugModule } = NativeModules;

@@ -5,6 +5,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableArray
 
 class NativeDebugModule(
     private val reactContext: ReactApplicationContext
@@ -182,6 +183,51 @@ class NativeDebugModule(
         } catch (error: Exception) {
             promise.reject(
                 "CREATE_ORDER_FROM_MAP_ERROR",
+                error.message,
+                error
+            )
+        }
+    }
+    @ReactMethod
+    fun summarizeOrdersFromArray(
+        ordersInput: ReadableArray,
+        promise: Promise
+    ) {
+        try {
+            var totalAmount = 0.0
+            var highValueOrders = 0
+            var deliveredOrders = 0
+
+            for (index in 0 until ordersInput.size()) {
+                val orderMap = ordersInput.getMap(index)
+
+                val amount = orderMap?.getOptionalDouble("amount") ?: 0.0
+                val status = orderMap?.getOptionalString("status") ?: "UNKNOWN"
+
+                totalAmount += amount
+
+                if (amount >= 5000.0) {
+                    highValueOrders++
+                }
+
+                if (status.uppercase() == "DELIVERED") {
+                    deliveredOrders++
+                }
+            }
+
+            val responseMap = Arguments.createMap().apply {
+                putInt("totalOrders", ordersInput.size())
+                putDouble("totalAmount", totalAmount)
+                putInt("highValueOrders", highValueOrders)
+                putInt("deliveredOrders", deliveredOrders)
+                putString("source", "Kotlin ReadableArray")
+                putString("message", "Order array summarized successfully in Kotlin")
+            }
+
+            promise.resolve(responseMap)
+        } catch (error: Exception) {
+            promise.reject(
+                "SUMMARIZE_ORDERS_ERROR",
                 error.message,
                 error
             )

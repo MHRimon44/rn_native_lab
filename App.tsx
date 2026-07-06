@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import NativeDebugModule, {
+  NativeOrderArraySummary,
   NativeOrderInput,
   NativeOrderItem,
   NativeOrderSummary,
@@ -22,6 +23,9 @@ function App(): React.JSX.Element {
     null,
   );
   const [recentOrders, setRecentOrders] = useState<NativeOrderItem[]>([]);
+  const [arraySummary, setArraySummary] =
+    useState<NativeOrderArraySummary | null>(null);
+
   const handleGreeting = async () => {
     try {
       const message = await NativeDebugModule.getNativeGreeting('SaRa');
@@ -91,6 +95,39 @@ function App(): React.JSX.Element {
       Alert.alert('Native Error', 'Failed to send order object to Kotlin');
     }
   };
+
+  const handleSummarizeOrdersFromArray = async () => {
+    try {
+      const orders: NativeOrderInput[] = [
+        {
+          orderId: 'ORD-7001',
+          customerName: 'Customer 1',
+          amount: 1200,
+          status: 'DELIVERED',
+        },
+        {
+          orderId: 'ORD-7002',
+          customerName: 'Customer 2',
+          amount: 6500,
+          status: 'PROCESSING',
+        },
+        {
+          orderId: 'ORD-7003',
+          customerName: 'Customer 3',
+          amount: 900,
+          status: 'PENDING',
+        },
+      ];
+
+      const summary = await NativeDebugModule.summarizeOrdersFromArray(orders);
+
+      setArraySummary(summary);
+      setResult(summary.message);
+    } catch (error) {
+      console.log('Summarize orders error:', error);
+      Alert.alert('Native Error', 'Failed to summarize order array in Kotlin');
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -131,6 +168,12 @@ function App(): React.JSX.Element {
               onPress={handleCreateOrderFromMap}
             />
           </View>
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Send Order Array To Kotlin"
+              onPress={handleSummarizeOrdersFromArray}
+            />
+          </View>
           <Text style={styles.resultTitle}>Result:</Text>
           <Text style={styles.result}>{result}</Text>
           {orderSummary && (
@@ -158,6 +201,18 @@ function App(): React.JSX.Element {
                   <Text>Source: {order.source}</Text>
                 </View>
               ))}
+            </View>
+          )}
+          {arraySummary && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>
+                Order Array Summary From Kotlin
+              </Text>
+              <Text>Total Orders: {arraySummary.totalOrders}</Text>
+              <Text>Total Amount: {arraySummary.totalAmount}</Text>
+              <Text>High Value Orders: {arraySummary.highValueOrders}</Text>
+              <Text>Delivered Orders: {arraySummary.deliveredOrders}</Text>
+              <Text>Source: {arraySummary.source}</Text>
             </View>
           )}
         </View>
