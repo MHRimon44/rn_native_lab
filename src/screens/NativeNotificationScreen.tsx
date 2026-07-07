@@ -22,6 +22,7 @@ function NativeNotificationScreen(): React.JSX.Element {
   );
   const [result, setResult] = useState<string>('No notification result yet');
   const [notifications, setNotifications] = useState<NativeNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   const showNativeError = (screenTitle: string, error: unknown) => {
     const nativeError = error as {
@@ -42,8 +43,14 @@ function NativeNotificationScreen(): React.JSX.Element {
   };
 
   const loadNotifications = async () => {
-    const inbox = await NativeNotificationModule.getNotifications();
+    const [inbox, count] = await Promise.all([
+      NativeNotificationModule.getNotifications(),
+      NativeNotificationModule.getUnreadCount(),
+    ]);
+
     setNotifications(inbox);
+    setUnreadCount(count);
+
     return inbox;
   };
 
@@ -140,7 +147,7 @@ function NativeNotificationScreen(): React.JSX.Element {
   const handleMarkAsRead = async (id: string) => {
     try {
       const updated = await NativeNotificationModule.markAsRead(id);
-
+      await NativeNotificationModule.syncBadgeCount();
       await loadNotifications();
 
       setResult(`Marked as read: ${updated ? 'Yes' : 'No'}`);
@@ -152,7 +159,7 @@ function NativeNotificationScreen(): React.JSX.Element {
   const handleClearNotifications = async () => {
     try {
       const cleared = await NativeNotificationModule.clearNotifications();
-
+      await NativeNotificationModule.syncBadgeCount();
       await loadNotifications();
 
       setResult(`Notification inbox cleared: ${cleared ? 'Yes' : 'No'}`);
@@ -160,7 +167,31 @@ function NativeNotificationScreen(): React.JSX.Element {
       showNativeError('Clear Inbox Error', error);
     }
   };
+  const handleDeleteNotification = async (id: string) => {
+    try {
+      const deleted = await NativeNotificationModule.deleteNotification(id);
 
+      await NativeNotificationModule.syncBadgeCount();
+      await loadNotifications();
+
+      setResult(`Notification deleted: ${deleted ? 'Yes' : 'No'}`);
+    } catch (error) {
+      showNativeError('Delete Notification Error', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const updated = await NativeNotificationModule.markAllAsRead();
+
+      await NativeNotificationModule.syncBadgeCount();
+      await loadNotifications();
+
+      setResult(`All notifications marked as read: ${updated ? 'Yes' : 'No'}`);
+    } catch (error) {
+      showNativeError('Mark All Read Error', error);
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -217,6 +248,10 @@ function NativeNotificationScreen(): React.JSX.Element {
         </View>
 
         <View style={styles.buttonWrapper}>
+          <Button title="Mark All As Read" onPress={handleMarkAllAsRead} />
+        </View>
+
+        <View style={styles.buttonWrapper}>
           <Button
             title="Clear Notification Inbox"
             onPress={handleClearNotifications}
@@ -227,8 +262,9 @@ function NativeNotificationScreen(): React.JSX.Element {
         <Text style={styles.result}>{result}</Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Inbox ({notifications.length})</Text>
-
+          <Text style={styles.cardTitle}>
+            Inbox ({notifications.length}) - Unread: {unreadCount}
+          </Text>
           {notifications.length === 0 ? (
             <Text>No notifications saved yet.</Text>
           ) : (
@@ -250,6 +286,12 @@ function NativeNotificationScreen(): React.JSX.Element {
                     />
                   </View>
                 )}
+                <View style={styles.smallButton}>
+                  <Button
+                    title="Delete"
+                    onPress={() => handleDeleteNotification(item.id)}
+                  />
+                </View>
               </View>
             ))
           )}

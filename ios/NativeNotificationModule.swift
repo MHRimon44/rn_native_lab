@@ -1,13 +1,19 @@
 import Foundation
 import UserNotifications
 import SQLite3
+import UIKit
 
 class NotificationTapStore {
   static let shared = NotificationTapStore()
 
   private var pendingTap: [String: Any]?
+  private var eventEmitter: (([String: Any]) -> Void)?
 
   private init() {}
+
+  func setEventEmitter(_ emitter: (([String: Any]) -> Void)?) {
+    eventEmitter = emitter
+  }
 
   func saveFromUserInfo(_ userInfo: [AnyHashable: Any]) {
     guard let id = userInfo["id"] as? String else {
@@ -18,13 +24,19 @@ class NotificationTapStore {
     let message = userInfo["message"] as? String ?? ""
     let source = userInfo["source"] as? String ?? "local"
 
-    pendingTap = [
+    let tap: [String: Any] = [
       "id": id,
       "title": title,
       "message": message,
       "source": source == "NativeNotificationModule" ? "local" : source,
       "openedAt": currentIsoTime()
     ]
+
+    pendingTap = tap
+
+    DispatchQueue.main.async {
+      self.eventEmitter?(tap)
+    }
   }
 
   func getPendingTap() -> [String: Any]? {
@@ -46,7 +58,7 @@ class NotificationTapStore {
 }
 
 @objc(NativeNotificationModule)
-class NativeNotificationModule: NSObject {
+class NativeNotificationModule: RCTEventEmitter {
 
   private let databaseName = "rn_native_lab_notifications.sqlite"
   private let tableName = "notifications"
@@ -58,19 +70,41 @@ class NativeNotificationModule: NSObject {
     to: sqlite3_destructor_type.self
   )
 
-  override init() {
-    super.init()
-    openDatabase()
-    createTableIfNeeded()
-  }
-
   deinit {
     if database != nil {
       sqlite3_close(database)
       database = nil
     }
   }
+  override init() {
+    super.init()
+    NotificationTapStore.shared.setEventEmitter { [weak self] tap in
+      self?.sendEvent(
+        withName: "NativeNotificationTapped",
+        body: tap
+      )
+    }
 
+    openDatabase()
+    createTableIfNeeded()
+  }
+
+  override func supportedEvents() -> [String]! {
+    return ["NativeNotificationTapped"]
+  }
+
+  override func startObserving() {
+    NotificationTapStore.shared.setEventEmitter { [weak self] tap in
+      self?.sendEvent(
+        withName: "NativeNotificationTapped",
+        body: tap
+      )
+    }
+  }
+
+  override func stopObserving() {
+    NotificationTapStore.shared.setEventEmitter(nil)
+  }
   @objc
   func requestNotificationPermission(
     _ resolve: @escaping RCTPromiseResolveBlock,
@@ -146,6 +180,8 @@ class NativeNotificationModule: NSObject {
         repeats: false
       )
 
+      let nextBadgeCount = self.getUnreadCountFromDatabase() + 1
+      content.badge = NSNumber(value: nextBadgeCount)
       let request = UNNotificationRequest(
         identifier: id,
         content: content,
@@ -179,7 +215,7 @@ class NativeNotificationModule: NSObject {
           )
           return
         }
-
+        self.updateAppBadgeCount(nextBadgeCount)
         resolve(true)
       }
     }
@@ -319,6 +355,7 @@ class NativeNotificationModule: NSObject {
 
     if sqlite3_step(statement) == SQLITE_DONE {
       sqlite3_finalize(statement)
+      updateAppBadgeCount(getUnreadCountFromDatabase())
       resolve(true)
     } else {
       sqlite3_finalize(statement)
@@ -343,6 +380,7 @@ class NativeNotificationModule: NSObject {
     let query = "DELETE FROM \(tableName)"
 
     if sqlite3_exec(database, query, nil, nil, nil) == SQLITE_OK {
+      updateAppBadgeCount(0)
       resolve(true)
     } else {
       reject(
@@ -455,6 +493,38 @@ class NativeNotificationModule: NSObject {
     ]
     return formatter.string(from: Date())
   }
+
+  private func getUnreadCountFromDatabase() -> Int {
+    guard database != nil else {
+      return 0
+    }
+
+    let query = """
+    SELECT COUNT(*)
+    FROM \(tableName)
+    WHERE is_read = 0
+    """
+
+    var statement: OpaquePointer?
+    var count = 0
+
+    if sqlite3_prepare_v2(database, query, -1, &statement, nil) == SQLITE_OK {
+      if sqlite3_step(statement) == SQLITE_ROW {
+        count = Int(sqlite3_column_int(statement, 0))
+      }
+    }
+
+    sqlite3_finalize(statement)
+
+    return count
+  }
+
+  private func updateAppBadgeCount(_ count: Int) {
+    DispatchQueue.main.async {
+      UIApplication.shared.applicationIconBadgeNumber = count
+    }
+  }
+
   @objc
   func getInitialNotification(
     _ resolve: RCTPromiseResolveBlock,
@@ -477,7 +547,102 @@ class NativeNotificationModule: NSObject {
   }
 
   @objc
-  static func requiresMainQueueSetup() -> Bool {
+  func getUnreadCount(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    resolve(getUnreadCountFromDatabase())
+  }
+
+  @objc
+  func deleteNotification(
+    _ notificationId: String,
+    resolver resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    let normalizedId = notificationId.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    if normalizedId.isEmpty {
+      reject("INVALID_ID", "Notification id cannot be blank", nil)
+      return
+    }
+
+    guard database != nil else {
+      reject("DATABASE_NOT_READY", "Notification database is not ready", nil)
+      return
+    }
+
+    let query = """
+    DELETE FROM \(tableName)
+    WHERE id = ?
+    """
+
+    var statement: OpaquePointer?
+
+    if sqlite3_prepare_v2(database, query, -1, &statement, nil) != SQLITE_OK {
+      reject(
+        "DELETE_NOTIFICATION_ERROR",
+        "Failed to prepare delete notification query",
+        nil
+      )
+      return
+    }
+
+    sqlite3_bind_text(statement, 1, normalizedId, -1, sqliteTransient)
+
+    if sqlite3_step(statement) == SQLITE_DONE {
+      sqlite3_finalize(statement)
+      updateAppBadgeCount(getUnreadCountFromDatabase())
+      resolve(true)
+    } else {
+      sqlite3_finalize(statement)
+      reject(
+        "DELETE_NOTIFICATION_ERROR",
+        "Failed to delete notification",
+        nil
+      )
+    }
+  }
+
+  @objc
+  func markAllAsRead(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    guard database != nil else {
+      reject("DATABASE_NOT_READY", "Notification database is not ready", nil)
+      return
+    }
+
+    let query = """
+    UPDATE \(tableName)
+    SET is_read = 1
+    """
+
+    if sqlite3_exec(database, query, nil, nil, nil) == SQLITE_OK {
+      updateAppBadgeCount(0)
+      resolve(true)
+    } else {
+      reject(
+        "MARK_ALL_NOTIFICATIONS_READ_ERROR",
+        "Failed to mark all notifications as read",
+        nil
+      )
+    }
+  }
+
+  @objc
+  func syncBadgeCount(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    let unreadCount = getUnreadCountFromDatabase()
+    updateAppBadgeCount(unreadCount)
+    resolve(true)
+  }
+
+  @objc
+  override static func requiresMainQueueSetup() -> Bool {
     return false
   }
 }

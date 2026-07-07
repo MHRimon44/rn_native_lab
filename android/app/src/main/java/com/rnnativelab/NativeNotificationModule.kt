@@ -230,7 +230,7 @@ class NativeNotificationModule(
                 source = "local",
                 createdAt = createdAt
             )
-
+            val unreadCount = getUnreadCountFromDatabase()
             val launchIntent =
                 reactContext.packageManager.getLaunchIntentForPackage(
                     reactContext.packageName
@@ -266,6 +266,7 @@ class NativeNotificationModule(
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setNumber(unreadCount)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .build()
@@ -479,6 +480,82 @@ class NativeNotificationModule(
         }
     }
 
+    @ReactMethod
+    fun getUnreadCount(promise: Promise) {
+        try {
+            promise.resolve(getUnreadCountFromDatabase())
+        } catch (error: Exception) {
+            promise.reject(
+                "GET_UNREAD_COUNT_ERROR",
+                error.message ?: "Failed to get unread count",
+                error
+            )
+        }
+    }
+
+    @ReactMethod
+    fun deleteNotification(id: String, promise: Promise) {
+        try {
+            if (id.isBlank()) {
+                promise.reject("INVALID_ID", "Notification id cannot be blank")
+                return
+            }
+
+            dbHelper.writableDatabase.delete(
+                TABLE_NOTIFICATIONS,
+                "id = ?",
+                arrayOf(id)
+            )
+
+            promise.resolve(true)
+        } catch (error: Exception) {
+            promise.reject(
+                "DELETE_NOTIFICATION_ERROR",
+                error.message ?: "Failed to delete notification",
+                error
+            )
+        }
+    }
+
+    @ReactMethod
+    fun markAllAsRead(promise: Promise) {
+        try {
+            val values = ContentValues().apply {
+                put("is_read", 1)
+            }
+
+            dbHelper.writableDatabase.update(
+                TABLE_NOTIFICATIONS,
+                values,
+                null,
+                null
+            )
+
+            promise.resolve(true)
+        } catch (error: Exception) {
+            promise.reject(
+                "MARK_ALL_NOTIFICATIONS_READ_ERROR",
+                error.message ?: "Failed to mark all notifications as read",
+                error
+            )
+        }
+    }
+
+    @ReactMethod
+    fun syncBadgeCount(promise: Promise) {
+        try {
+            // Android launcher badge behavior is manufacturer/launcher dependent.
+            // We keep this method for platform parity and future push-notification integration.
+            getUnreadCountFromDatabase()
+            promise.resolve(true)
+        } catch (error: Exception) {
+            promise.reject(
+                "SYNC_BADGE_COUNT_ERROR",
+                error.message ?: "Failed to sync badge count",
+                error
+            )
+        }
+    }
     private fun saveNotificationToDatabase(
         id: String,
         title: String,
@@ -592,5 +669,22 @@ class NativeNotificationModule(
             db.execSQL("DROP TABLE IF EXISTS $TABLE_NOTIFICATIONS")
             onCreate(db)
         }
+    }
+
+    private fun getUnreadCountFromDatabase(): Int {
+        val db = dbHelper.readableDatabase
+
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_NOTIFICATIONS WHERE is_read = 0",
+            null
+        )
+
+        cursor.use {
+            if (it.moveToFirst()) {
+                return it.getInt(0)
+            }
+        }
+
+        return 0
     }
 }
