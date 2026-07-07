@@ -17,6 +17,9 @@ type NativeSecureStorageModuleType = {
   getToken(): Promise<string | null>;
   deleteToken(): Promise<SecureStorageResult>;
   hasValue(key: string): Promise<boolean>;
+
+  isBiometricAvailable(): Promise<boolean>;
+  getTokenWithBiometric(): Promise<string | null>;
 };
 
 const { NativeSecureStorageModule } = NativeModules;

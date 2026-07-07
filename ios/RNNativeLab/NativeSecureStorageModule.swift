@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import LocalAuthentication
 
 @objc(NativeSecureStorageModule)
 class NativeSecureStorageModule: NSObject {
@@ -345,6 +346,79 @@ class NativeSecureStorageModule: NSObject {
       "Failed to check value. OSStatus: \(result.status)",
       nil
     )
+  }
+
+  @objc
+  func isBiometricAvailable(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    let context = LAContext()
+    var error: NSError?
+
+    let available = context.canEvaluatePolicy(
+      .deviceOwnerAuthentication,
+      error: &error
+    )
+
+    resolve(available)
+  }
+
+  @objc
+  func getTokenWithBiometric(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    let context = LAContext()
+    context.localizedCancelTitle = "Cancel"
+
+    var authError: NSError?
+
+    let canAuthenticate = context.canEvaluatePolicy(
+      .deviceOwnerAuthentication,
+      error: &authError
+    )
+
+    if !canAuthenticate {
+      reject(
+        "BIOMETRIC_NOT_AVAILABLE",
+        authError?.localizedDescription ?? "Biometric or device authentication is not available",
+        authError
+      )
+      return
+    }
+
+    context.evaluatePolicy(
+      .deviceOwnerAuthentication,
+      localizedReason: "Authenticate to read your secure token"
+    ) { success, error in
+      if !success {
+        reject(
+          "BIOMETRIC_AUTH_FAILED",
+          error?.localizedDescription ?? "Biometric authentication failed",
+          error
+        )
+        return
+      }
+
+      let result = self.readRawValue(key: self.tokenKey)
+
+      if result.status == errSecItemNotFound {
+        resolve(nil)
+        return
+      }
+
+      if result.status != errSecSuccess {
+        reject(
+          "GET_TOKEN_ERROR",
+          "Failed to read token. OSStatus: \(result.status)",
+          nil
+        )
+        return
+      }
+
+      resolve(result.value)
+    }
   }
 
   @objc

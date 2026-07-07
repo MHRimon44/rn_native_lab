@@ -126,6 +126,33 @@ function NativeSecureStorageScreen(): React.JSX.Element {
     }
   };
 
+  const handleCheckBiometricAvailable = async () => {
+    try {
+      const available = await NativeSecureStorageModule.isBiometricAvailable();
+
+      setResult(
+        `Biometric/device authentication available: ${
+          available ? 'Yes' : 'No'
+        }`,
+      );
+    } catch (error) {
+      showNativeError('Biometric Check Error', error);
+    }
+  };
+
+  const handleGetTokenWithBiometric = async () => {
+    try {
+      const token = await NativeSecureStorageModule.getTokenWithBiometric();
+
+      setResult(
+        token === null
+          ? 'Token not found after biometric authentication'
+          : `Biometric Token: ${token}`,
+      );
+    } catch (error) {
+      showNativeError('Biometric Token Error', error);
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -187,6 +214,21 @@ function NativeSecureStorageScreen(): React.JSX.Element {
         <View style={styles.buttonWrapper}>
           <Button title="Delete Token" onPress={handleDeleteToken} />
         </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="Check Biometric Available"
+            onPress={handleCheckBiometricAvailable}
+          />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="Read Token With Biometric"
+            onPress={handleGetTokenWithBiometric}
+          />
+        </View>
+
         <Text style={styles.resultTitle}>Result:</Text>
         <Text style={styles.result}>{result}</Text>
 
@@ -196,11 +238,12 @@ function NativeSecureStorageScreen(): React.JSX.Element {
           <Text>2. Read Secure Value</Text>
           <Text>3. Check Key Exists</Text>
           <Text>4. Delete Secure Value</Text>
-          <Text>5. Read again to confirm null</Text>
-          <Text>6. Save Token</Text>
-          <Text>7. Read Token</Text>
-          <Text>8. Delete Token</Text>
-          <Text>9. Save multiple keys and Clear All</Text>
+          <Text>5. Save Token</Text>
+          <Text>6. Read Token</Text>
+          <Text>7. Check Biometric Available</Text>
+          <Text>8. Read Token With Biometric</Text>
+          <Text>9. Delete Token</Text>
+          <Text>10. Clear All Secure Values</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
