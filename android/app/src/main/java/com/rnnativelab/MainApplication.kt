@@ -17,6 +17,7 @@ class MainApplication : Application(), ReactApplication {
           add(NativeDebugPackage())
           add(NativeDevicePackage())
           add(NativeSecureStoragePackage())
+          add(NativeNotificationPackage())
         },
     )
   }

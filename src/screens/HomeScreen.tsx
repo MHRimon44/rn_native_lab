@@ -32,6 +32,12 @@ const menuItems: MenuItem[] = [
       'Save, read, delete, and clear secure values using Android encrypted storage and iOS Keychain.',
     routeName: 'NativeSecureStorage',
   },
+  {
+    title: 'Native Notification Module',
+    description:
+      'Request notification permission and show local notifications from native Android and iOS code.',
+    routeName: 'NativeNotification',
+  },
 ];
 
 function HomeScreen({ navigation }: Props): React.JSX.Element {

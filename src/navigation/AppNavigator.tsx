@@ -7,6 +7,7 @@ import NativeDebugScreen from '../screens/NativeDebugScreen';
 import NativeDeviceScreen from '../screens/NativeDeviceScreen';
 import type { RootStackParamList } from '../types/navigator';
 import NativeSecureStorageScreen from '../screens/NativeSecureStorageScreen';
+import NativeNotificationScreen from '../screens/NativeNotificationScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -47,6 +48,13 @@ function AppNavigator(): React.JSX.Element {
           component={NativeSecureStorageScreen}
           options={{
             title: 'Native Secure Storage',
+          }}
+        />
+        <Stack.Screen
+          name="NativeNotification"
+          component={NativeNotificationScreen}
+          options={{
+            title: 'Native Notification Module',
           }}
         />
       </Stack.Navigator>
