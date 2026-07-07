@@ -20,6 +20,10 @@ type NativeNotificationModuleType = {
   getInitialNotification(): Promise<NativeNotificationTap | null>;
 
   clearInitialNotification(): Promise<boolean>;
+
+  addListener(eventName: string): void;
+
+  removeListeners(count: number): void;
 };
 
 const { NativeNotificationModule } = NativeModules;

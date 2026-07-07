@@ -6,8 +6,13 @@ class NotificationTapStore {
   static let shared = NotificationTapStore()
 
   private var pendingTap: [String: Any]?
+  private var eventEmitter: (([String: Any]) -> Void)?
 
   private init() {}
+
+  func setEventEmitter(_ emitter: (([String: Any]) -> Void)?) {
+    eventEmitter = emitter
+  }
 
   func saveFromUserInfo(_ userInfo: [AnyHashable: Any]) {
     guard let id = userInfo["id"] as? String else {
@@ -18,13 +23,19 @@ class NotificationTapStore {
     let message = userInfo["message"] as? String ?? ""
     let source = userInfo["source"] as? String ?? "local"
 
-    pendingTap = [
+    let tap: [String: Any] = [
       "id": id,
       "title": title,
       "message": message,
       "source": source == "NativeNotificationModule" ? "local" : source,
       "openedAt": currentIsoTime()
     ]
+
+    pendingTap = tap
+
+    DispatchQueue.main.async {
+      self.eventEmitter?(tap)
+    }
   }
 
   func getPendingTap() -> [String: Any]? {
@@ -46,7 +57,7 @@ class NotificationTapStore {
 }
 
 @objc(NativeNotificationModule)
-class NativeNotificationModule: NSObject {
+class NativeNotificationModule: RCTEventEmitter {
 
   private let databaseName = "rn_native_lab_notifications.sqlite"
   private let tableName = "notifications"
@@ -58,19 +69,41 @@ class NativeNotificationModule: NSObject {
     to: sqlite3_destructor_type.self
   )
 
-  override init() {
-    super.init()
-    openDatabase()
-    createTableIfNeeded()
-  }
-
   deinit {
     if database != nil {
       sqlite3_close(database)
       database = nil
     }
   }
+  override init() {
+    super.init()
+    NotificationTapStore.shared.setEventEmitter { [weak self] tap in
+      self?.sendEvent(
+        withName: "NativeNotificationTapped",
+        body: tap
+      )
+    }
 
+    openDatabase()
+    createTableIfNeeded()
+  }
+
+  override func supportedEvents() -> [String]! {
+    return ["NativeNotificationTapped"]
+  }
+
+  override func startObserving() {
+    NotificationTapStore.shared.setEventEmitter { [weak self] tap in
+      self?.sendEvent(
+        withName: "NativeNotificationTapped",
+        body: tap
+      )
+    }
+  }
+
+  override func stopObserving() {
+    NotificationTapStore.shared.setEventEmitter(nil)
+  }
   @objc
   func requestNotificationPermission(
     _ resolve: @escaping RCTPromiseResolveBlock,
@@ -477,7 +510,7 @@ class NativeNotificationModule: NSObject {
   }
 
   @objc
-  static func requiresMainQueueSetup() -> Bool {
+  override static func requiresMainQueueSetup() -> Bool {
     return false
   }
 }

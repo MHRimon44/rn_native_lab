@@ -16,6 +16,11 @@ object NotificationTapStore {
     )
 
     private var pendingTap: NotificationTap? = null
+    private var eventEmitter: ((NotificationTap) -> Unit)? = null
+
+    fun setEventEmitter(emitter: ((NotificationTap) -> Unit)?) {
+        eventEmitter = emitter
+    }
 
     fun saveFromIntent(intent: Intent?) {
         if (intent == null) {
@@ -23,18 +28,20 @@ object NotificationTapStore {
         }
 
         val id = intent.getStringExtra("notification_id") ?: return
-
         val title = intent.getStringExtra("notification_title") ?: ""
         val message = intent.getStringExtra("notification_message") ?: ""
         val source = intent.getStringExtra("notification_source") ?: "local"
 
-        pendingTap = NotificationTap(
+        val tap = NotificationTap(
             id = id,
             title = title,
             message = message,
             source = source,
             openedAt = getCurrentIsoTime()
         )
+
+        pendingTap = tap
+        eventEmitter?.invoke(tap)
     }
 
     fun getPendingTap(): NotificationTap? {

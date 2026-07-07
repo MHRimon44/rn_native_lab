@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
-import { AppState } from 'react-native';
+import { AppState, NativeEventEmitter } from 'react-native';
 import {
   NavigationContainer,
   useNavigationContainerRef,
@@ -13,35 +13,48 @@ import NativeSecureStorageScreen from '../screens/NativeSecureStorageScreen';
 import NativeNotificationScreen from '../screens/NativeNotificationScreen';
 import NativeNotificationModule from '../native/NativeNotificationModule';
 import { RootStackParamList } from '../types/navigator';
+import { NativeNotificationTap } from '../types/nativeNotification';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AppNavigator(): React.JSX.Element {
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
+  const handleNotificationTap = useCallback(
+    async (tap: NativeNotificationTap) => {
+      try {
+        if (!tap?.id) {
+          return;
+        }
+
+        await NativeNotificationModule.markAsRead(tap.id);
+
+        if (navigationRef.isReady()) {
+          navigationRef.navigate('NativeNotification', {
+            initialNotificationId: tap.id,
+          });
+        }
+
+        await NativeNotificationModule.clearInitialNotification();
+      } catch (error) {
+        console.log('Notification tap event error:', error);
+      }
+    },
+    [navigationRef],
+  );
 
   const handlePendingNotificationTap = useCallback(async () => {
     try {
-      if (!navigationRef.isReady()) {
-        return;
-      }
-
       const tap = await NativeNotificationModule.getInitialNotification();
 
       if (!tap) {
         return;
       }
 
-      await NativeNotificationModule.markAsRead(tap.id);
-
-      navigationRef.navigate('NativeNotification', {
-        initialNotificationId: tap.id,
-      });
-
-      await NativeNotificationModule.clearInitialNotification();
+      await handleNotificationTap(tap);
     } catch (error) {
-      console.log('Handle notification tap error:', error);
+      console.log('Handle initial notification tap error:', error);
     }
-  }, [navigationRef]);
+  }, [handleNotificationTap]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => {
@@ -56,7 +69,21 @@ function AppNavigator(): React.JSX.Element {
       subscription.remove();
     };
   }, [handlePendingNotificationTap]);
+  useEffect(() => {
+    const emitter = new NativeEventEmitter(NativeNotificationModule as any);
 
+    const subscription = emitter.addListener(
+      'NativeNotificationTapped',
+      async (tap: NativeNotificationTap) => {
+        console.log('NativeNotificationTapped event:', tap);
+        await handleNotificationTap(tap);
+      },
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [handleNotificationTap]);
   return (
     <NavigationContainer
       ref={navigationRef}

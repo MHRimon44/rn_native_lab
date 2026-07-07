@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
+import com.facebook.react.modules.core.DeviceEventManagerModule
 
 class NativeNotificationModule(
     private val reactContext: ReactApplicationContext
@@ -44,6 +45,49 @@ class NativeNotificationModule(
     }
 
     private var notificationPermissionPromise: Promise? = null
+    private var listenerCount = 0
+
+    init {
+    NotificationTapStore.setEventEmitter { tap ->
+        emitNotificationTappedEvent(tap)
+        }
+    }
+
+    @ReactMethod
+    fun addListener(eventName: String) {
+        if (eventName == "NativeNotificationTapped") {
+            listenerCount += 1
+        }
+    }
+
+    @ReactMethod
+    fun removeListeners(count: Int) {
+        listenerCount -= count
+
+        if (listenerCount < 0) {
+            listenerCount = 0
+        }
+    }
+
+    private fun emitNotificationTappedEvent(
+        tap: NotificationTapStore.NotificationTap
+    ) {
+        if (listenerCount <= 0) {
+            return
+        }
+
+        val map = Arguments.createMap().apply {
+            putString("id", tap.id)
+            putString("title", tap.title)
+            putString("message", tap.message)
+            putString("source", tap.source)
+            putString("openedAt", tap.openedAt)
+        }
+
+        reactContext
+            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            .emit("NativeNotificationTapped", map)
+    }
 
     private val dbHelper: NotificationDbHelper by lazy {
         NotificationDbHelper(reactContext)
