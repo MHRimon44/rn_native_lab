@@ -11,8 +11,9 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		568C30002FFCD3450048FB94 /* NativeSecureStorageModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 568C2FFF2FFCD3450048FB94 /* NativeSecureStorageModuleBridge.m */; };
 		568C30012FFCD3450048FB94 /* NativeSecureStorageModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 568C2FFE2FFCD3450048FB94 /* NativeSecureStorageModule.swift */; };
-		568C30042FFCD90D0048FB94 /* NativeNotificationModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 568C30032FFCD90D0048FB94 /* NativeNotificationModuleBridge.m */; };
-		568C30052FFCD90D0048FB94 /* NativeNotificationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 568C30022FFCD90D0048FB94 /* NativeNotificationModule.swift */; };
+		568C30082FFCE0C00048FB94 /* NativeNotificationModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 568C30072FFCE0C00048FB94 /* NativeNotificationModuleBridge.m */; };
+		568C30092FFCE0C00048FB94 /* NativeNotificationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 568C30062FFCE0C00048FB94 /* NativeNotificationModule.swift */; };
+		568C300B2FFCE1220048FB94 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 568C300A2FFCE1220048FB94 /* libsqlite3.tbd */; };
 		56BEAEB62FFBC040007FD273 /* NativeDeviceModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BEAEB22FFBC040007FD273 /* NativeDeviceModule.swift */; };
 		56BEAEB72FFBC0D9007FD273 /* NativeDeviceModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 56BEAEB32FFBC040007FD273 /* NativeDeviceModuleBridge.m */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
@@ -28,8 +29,9 @@
 		3B4392A12AC88292D35C810B /* Pods-RNNativeLab.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNNativeLab.debug.xcconfig"; path = "Target Support Files/Pods-RNNativeLab/Pods-RNNativeLab.debug.xcconfig"; sourceTree = "<group>"; };
 		568C2FFE2FFCD3450048FB94 /* NativeSecureStorageModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSecureStorageModule.swift; sourceTree = "<group>"; };
 		568C2FFF2FFCD3450048FB94 /* NativeSecureStorageModuleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NativeSecureStorageModuleBridge.m; sourceTree = "<group>"; };
-		568C30022FFCD90D0048FB94 /* NativeNotificationModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeNotificationModule.swift; sourceTree = "<group>"; };
-		568C30032FFCD90D0048FB94 /* NativeNotificationModuleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NativeNotificationModuleBridge.m; sourceTree = "<group>"; };
+		568C30062FFCE0C00048FB94 /* NativeNotificationModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeNotificationModule.swift; sourceTree = "<group>"; };
+		568C30072FFCE0C00048FB94 /* NativeNotificationModuleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NativeNotificationModuleBridge.m; sourceTree = "<group>"; };
+		568C300A2FFCE1220048FB94 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		56BEAEB22FFBC040007FD273 /* NativeDeviceModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDeviceModule.swift; sourceTree = "<group>"; };
 		56BEAEB32FFBC040007FD273 /* NativeDeviceModuleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NativeDeviceModuleBridge.m; sourceTree = "<group>"; };
 		56BEAEB42FFBC040007FD273 /* RNNativeLab-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RNNativeLab-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -45,6 +47,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				568C300B2FFCE1220048FB94 /* libsqlite3.tbd in Frameworks */,
 				0C80B921A6F3F58F76C31292 /* libPods-RNNativeLab.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -55,8 +58,8 @@
 		13B07FAE1A68108700A75B9A /* RNNativeLab */ = {
 			isa = PBXGroup;
 			children = (
-				568C30022FFCD90D0048FB94 /* NativeNotificationModule.swift */,
-				568C30032FFCD90D0048FB94 /* NativeNotificationModuleBridge.m */,
+				568C30062FFCE0C00048FB94 /* NativeNotificationModule.swift */,
+				568C30072FFCE0C00048FB94 /* NativeNotificationModuleBridge.m */,
 				568C2FFE2FFCD3450048FB94 /* NativeSecureStorageModule.swift */,
 				568C2FFF2FFCD3450048FB94 /* NativeSecureStorageModuleBridge.m */,
 				56BEAEB22FFBC040007FD273 /* NativeDeviceModule.swift */,
@@ -74,6 +77,7 @@
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				568C300A2FFCE1220048FB94 /* libsqlite3.tbd */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-RNNativeLab.a */,
 			);
@@ -271,8 +275,8 @@
 				568C30012FFCD3450048FB94 /* NativeSecureStorageModule.swift in Sources */,
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 				56BEAEB62FFBC040007FD273 /* NativeDeviceModule.swift in Sources */,
-				568C30042FFCD90D0048FB94 /* NativeNotificationModuleBridge.m in Sources */,
-				568C30052FFCD90D0048FB94 /* NativeNotificationModule.swift in Sources */,
+				568C30082FFCE0C00048FB94 /* NativeNotificationModuleBridge.m in Sources */,
+				568C30092FFCE0C00048FB94 /* NativeNotificationModule.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

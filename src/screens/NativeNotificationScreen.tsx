@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import NativeNotificationModule from '../native/NativeNotificationModule';
+import { NativeNotification } from '../types/nativeNotification';
 
 function NativeNotificationScreen(): React.JSX.Element {
   const [title, setTitle] = useState<string>('SaRa Notification');
@@ -18,6 +19,7 @@ function NativeNotificationScreen(): React.JSX.Element {
     'This notification was created from a native module.',
   );
   const [result, setResult] = useState<string>('No notification result yet');
+  const [notifications, setNotifications] = useState<NativeNotification[]>([]);
 
   const showNativeError = (screenTitle: string, error: unknown) => {
     const nativeError = error as {
@@ -35,6 +37,12 @@ function NativeNotificationScreen(): React.JSX.Element {
         nativeError.message ?? 'Notification operation failed'
       }`,
     );
+  };
+
+  const loadNotifications = async () => {
+    const inbox = await NativeNotificationModule.getNotifications();
+    setNotifications(inbox);
+    return inbox;
   };
 
   const handleRequestPermission = async () => {
@@ -55,21 +63,79 @@ function NativeNotificationScreen(): React.JSX.Element {
         message,
       );
 
-      setResult(`Local notification shown: ${shown ? 'Yes' : 'No'}`);
+      await loadNotifications();
+
+      setResult(`Local notification shown and saved: ${shown ? 'Yes' : 'No'}`);
     } catch (error) {
       showNativeError('Notification Error', error);
+    }
+  };
+
+  const handleSaveNotificationOnly = async () => {
+    try {
+      const notification: NativeNotification = {
+        id: `${Date.now()}`,
+        title,
+        message,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        source: 'local',
+      };
+
+      const saved = await NativeNotificationModule.saveNotification(
+        notification,
+      );
+
+      await loadNotifications();
+
+      setResult(`Notification saved only: ${saved ? 'Yes' : 'No'}`);
+    } catch (error) {
+      showNativeError('Save Notification Error', error);
+    }
+  };
+
+  const handleLoadNotifications = async () => {
+    try {
+      const inbox = await loadNotifications();
+
+      setResult(`Loaded ${inbox.length} notifications`);
+    } catch (error) {
+      showNativeError('Load Inbox Error', error);
+    }
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      const updated = await NativeNotificationModule.markAsRead(id);
+
+      await loadNotifications();
+
+      setResult(`Marked as read: ${updated ? 'Yes' : 'No'}`);
+    } catch (error) {
+      showNativeError('Mark Read Error', error);
+    }
+  };
+
+  const handleClearNotifications = async () => {
+    try {
+      const cleared = await NativeNotificationModule.clearNotifications();
+
+      await loadNotifications();
+
+      setResult(`Notification inbox cleared: ${cleared ? 'Yes' : 'No'}`);
+    } catch (error) {
+      showNativeError('Clear Inbox Error', error);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Native Notification Module</Text>
+        <Text style={styles.title}>Native Notification Inbox</Text>
 
         <Text style={styles.description}>
-          This screen requests notification permission and shows a local
-          notification using Android NotificationManager and iOS
-          UNUserNotificationCenter.
+          This screen requests notification permission, shows local
+          notifications, and saves notification records into native SQLite.
         </Text>
 
         <Text style={styles.label}>Notification Title</Text>
@@ -98,8 +164,29 @@ function NativeNotificationScreen(): React.JSX.Element {
 
         <View style={styles.buttonWrapper}>
           <Button
-            title="Show Local Notification"
+            title="Show + Save Local Notification"
             onPress={handleShowNotification}
+          />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="Save Notification Only"
+            onPress={handleSaveNotificationOnly}
+          />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="Load Notification Inbox"
+            onPress={handleLoadNotifications}
+          />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="Clear Notification Inbox"
+            onPress={handleClearNotifications}
           />
         </View>
 
@@ -107,12 +194,42 @@ function NativeNotificationScreen(): React.JSX.Element {
         <Text style={styles.result}>{result}</Text>
 
         <View style={styles.card}>
+          <Text style={styles.cardTitle}>Inbox ({notifications.length})</Text>
+
+          {notifications.length === 0 ? (
+            <Text>No notifications saved yet.</Text>
+          ) : (
+            notifications.map(item => (
+              <View key={item.id} style={styles.notificationItem}>
+                <Text style={styles.notificationTitle}>
+                  {item.isRead ? 'Read' : 'Unread'} - {item.title}
+                </Text>
+                <Text>{item.message}</Text>
+                <Text style={styles.meta}>ID: {item.id}</Text>
+                <Text style={styles.meta}>Source: {item.source}</Text>
+                <Text style={styles.meta}>Created: {item.createdAt}</Text>
+
+                {!item.isRead && (
+                  <View style={styles.smallButton}>
+                    <Button
+                      title="Mark As Read"
+                      onPress={() => handleMarkAsRead(item.id)}
+                    />
+                  </View>
+                )}
+              </View>
+            ))
+          )}
+        </View>
+
+        <View style={styles.card}>
           <Text style={styles.cardTitle}>Test Flow</Text>
           <Text>1. Request notification permission</Text>
-          <Text>2. Allow permission</Text>
-          <Text>3. Tap Show Local Notification</Text>
-          <Text>4. Check notification tray</Text>
-          <Text>5. Test while app is foreground/background</Text>
+          <Text>2. Show + Save Local Notification</Text>
+          <Text>3. Load Notification Inbox</Text>
+          <Text>4. Mark notification as read</Text>
+          <Text>5. Save Notification Only</Text>
+          <Text>6. Clear Notification Inbox</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -156,6 +273,9 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginBottom: 16,
   },
+  smallButton: {
+    marginTop: 10,
+  },
   resultTitle: {
     fontSize: 18,
     fontWeight: '700',
@@ -175,6 +295,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 8,
+  },
+  notificationItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  meta: {
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 

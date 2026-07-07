@@ -1,8 +1,18 @@
 import { NativeModules, Platform } from 'react-native';
+import { NativeNotification } from '../types/nativeNotification';
 
 type NativeNotificationModuleType = {
   requestNotificationPermission(): Promise<boolean>;
+
   showLocalNotification(title: string, message: string): Promise<boolean>;
+
+  saveNotification(notification: NativeNotification): Promise<boolean>;
+
+  getNotifications(): Promise<NativeNotification[]>;
+
+  markAsRead(id: string): Promise<boolean>;
+
+  clearNotifications(): Promise<boolean>;
 };
 
 const { NativeNotificationModule } = NativeModules;
