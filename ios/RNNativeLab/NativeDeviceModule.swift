@@ -136,4 +136,18 @@ class NativeDeviceModule: NSObject {
     return identifier
     #endif
   }
+  @objc
+  func getPlatformNameSync() -> String {
+    return "ios"
+  }
+
+  @objc
+  func getAppVersionSync() -> String {
+    return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+  }
+
+  @objc
+  func getBuildNumberSync() -> String {
+    return Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+  }
 }

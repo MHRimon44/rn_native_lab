@@ -30,4 +30,10 @@ RCT_EXTERN_METHOD(getDeviceSummary:
                   (RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN__BLOCKING_SYNCHRONOUS_METHOD(getPlatformNameSync)
+
+RCT_EXTERN__BLOCKING_SYNCHRONOUS_METHOD(getAppVersionSync)
+
+RCT_EXTERN__BLOCKING_SYNCHRONOUS_METHOD(getBuildNumberSync)
+
 @end

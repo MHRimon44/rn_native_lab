@@ -9,6 +9,9 @@ type NativeDeviceModuleType = {
   getBatteryLevel(): Promise<number>;
   isBatteryCharging(): Promise<boolean>;
   getDeviceSummary(): Promise<NativeDeviceSummary>;
+  getPlatformNameSync(): string;
+  getAppVersionSync(): string;
+  getBuildNumberSync(): string;
 };
 
 const { NativeDeviceModule } = NativeModules;

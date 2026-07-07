@@ -192,6 +192,43 @@ class NativeDeviceModule(
                 error
             )
         }
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun getPlatformNameSync(): String {
+        return "android"
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun getAppVersionSync(): String {
+        return try {
+            val packageInfo = reactContext.packageManager.getPackageInfo(
+                reactContext.packageName,
+                0
+            )
+
+            packageInfo.versionName ?: "Unknown"
+        } catch (error: Exception) {
+            "Unknown"
+        }
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun getBuildNumberSync(): String {
+        return try {
+            val packageInfo = reactContext.packageManager.getPackageInfo(
+                reactContext.packageName,
+                0
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode.toString()
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toString()
+            }
+        } catch (error: Exception) {
+            "Unknown"
+        }
+    }
     }
 
     private fun getBatteryIntent(): Intent? {

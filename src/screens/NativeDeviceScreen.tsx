@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Alert,
   Button,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 
 import NativeDeviceModule from '../native/NativeDeviceModule';
 import { NativeDeviceSummary } from '../types/nativeDevice';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function NativeDeviceScreen(): React.JSX.Element {
   const [result, setResult] = useState<string>('No device result yet');
@@ -102,6 +102,34 @@ function NativeDeviceScreen(): React.JSX.Element {
     }
   };
 
+  const handleGetSyncDeviceInfo = () => {
+    try {
+      const platformName = NativeDeviceModule.getPlatformNameSync();
+      const appVersion = NativeDeviceModule.getAppVersionSync();
+      const buildNumber = NativeDeviceModule.getBuildNumberSync();
+
+      setResult(
+        `Sync Result → Platform: ${platformName}, App Version: ${appVersion}, Build: ${buildNumber}`,
+      );
+    } catch (error) {
+      const nativeError = error as {
+        code?: string;
+        message?: string;
+      };
+
+      console.log('Sync device info error raw:', error);
+      console.log('Sync device info error code:', nativeError.code);
+      console.log('Sync device info error message:', nativeError.message);
+
+      Alert.alert(
+        'Device Error',
+        `${nativeError.code ?? 'UNKNOWN'}: ${
+          nativeError.message ?? 'Failed to get sync device info'
+        }`,
+      );
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -111,7 +139,12 @@ function NativeDeviceScreen(): React.JSX.Element {
           This screen reads app, Android device, OS, and battery information
           from Kotlin using a separate classic native module.
         </Text>
-
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="Get Sync Device Info"
+            onPress={handleGetSyncDeviceInfo}
+          />
+        </View>
         <View style={styles.buttonWrapper}>
           <Button
             title="Get Device Summary From Kotlin"
