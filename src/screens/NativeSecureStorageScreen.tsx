@@ -78,6 +78,54 @@ function NativeSecureStorageScreen(): React.JSX.Element {
     );
   };
 
+  const handleSaveToken = async () => {
+    try {
+      const response = await NativeSecureStorageModule.saveToken(storageValue);
+
+      setResult(
+        `${response.message} | Key: ${response.key ?? '-'} | Source: ${
+          response.source
+        }`,
+      );
+    } catch (error) {
+      showNativeError('Save Token Error', error);
+    }
+  };
+
+  const handleGetToken = async () => {
+    try {
+      const token = await NativeSecureStorageModule.getToken();
+
+      setResult(token === null ? 'Token not found' : `Token: ${token}`);
+    } catch (error) {
+      showNativeError('Get Token Error', error);
+    }
+  };
+
+  const handleDeleteToken = async () => {
+    try {
+      const response = await NativeSecureStorageModule.deleteToken();
+
+      setResult(
+        `${response.message} | Key: ${response.key ?? '-'} | Source: ${
+          response.source
+        }`,
+      );
+    } catch (error) {
+      showNativeError('Delete Token Error', error);
+    }
+  };
+
+  const handleHasValue = async () => {
+    try {
+      const exists = await NativeSecureStorageModule.hasValue(storageKey);
+
+      setResult(`Has value for "${storageKey}": ${exists ? 'Yes' : 'No'}`);
+    } catch (error) {
+      showNativeError('Has Value Error', error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -124,6 +172,21 @@ function NativeSecureStorageScreen(): React.JSX.Element {
           <Button title="Clear All Secure Values" onPress={handleClearAll} />
         </View>
 
+        <View style={styles.buttonWrapper}>
+          <Button title="Check Key Exists" onPress={handleHasValue} />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button title="Save Token" onPress={handleSaveToken} />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button title="Read Token" onPress={handleGetToken} />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button title="Delete Token" onPress={handleDeleteToken} />
+        </View>
         <Text style={styles.resultTitle}>Result:</Text>
         <Text style={styles.result}>{result}</Text>
 
@@ -131,9 +194,13 @@ function NativeSecureStorageScreen(): React.JSX.Element {
           <Text style={styles.cardTitle}>Test Flow</Text>
           <Text>1. Save Secure Value</Text>
           <Text>2. Read Secure Value</Text>
-          <Text>3. Delete Secure Value</Text>
-          <Text>4. Read again to confirm null</Text>
-          <Text>5. Save multiple keys and Clear All</Text>
+          <Text>3. Check Key Exists</Text>
+          <Text>4. Delete Secure Value</Text>
+          <Text>5. Read again to confirm null</Text>
+          <Text>6. Save Token</Text>
+          <Text>7. Read Token</Text>
+          <Text>8. Delete Token</Text>
+          <Text>9. Save multiple keys and Clear All</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
