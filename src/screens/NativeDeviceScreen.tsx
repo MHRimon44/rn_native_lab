@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Alert,
   Button,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -29,10 +30,6 @@ function NativeDeviceScreen(): React.JSX.Element {
         message?: string;
       };
 
-      console.log('Device summary error raw:', error);
-      console.log('Device summary error code:', nativeError.code);
-      console.log('Device summary error message:', nativeError.message);
-
       Alert.alert(
         'Device Error',
         `${nativeError.code ?? 'UNKNOWN'}: ${
@@ -47,8 +44,7 @@ function NativeDeviceScreen(): React.JSX.Element {
       const appVersion = await NativeDeviceModule.getAppVersion();
       setResult(`App Version: ${appVersion}`);
     } catch (error) {
-      console.log('App version error:', error);
-      Alert.alert('Device Error', 'Failed to get app version');
+      Alert.alert('Device Error', `Failed to get app version, ${error}`);
     }
   };
 
@@ -57,8 +53,7 @@ function NativeDeviceScreen(): React.JSX.Element {
       const buildNumber = await NativeDeviceModule.getBuildNumber();
       setResult(`Build Number: ${buildNumber}`);
     } catch (error) {
-      console.log('Build number error:', error);
-      Alert.alert('Device Error', 'Failed to get build number');
+      Alert.alert('Device Error', `Failed to get build number, ${error}`);
     }
   };
 
@@ -67,8 +62,7 @@ function NativeDeviceScreen(): React.JSX.Element {
       const deviceModel = await NativeDeviceModule.getDeviceModel();
       setResult(`Device Model: ${deviceModel}`);
     } catch (error) {
-      console.log('Device model error:', error);
-      Alert.alert('Device Error', 'Failed to get device model');
+      Alert.alert('Device Error', `Failed to get device model, ${error}`);
     }
   };
 
@@ -77,8 +71,7 @@ function NativeDeviceScreen(): React.JSX.Element {
       const osVersion = await NativeDeviceModule.getOSVersion();
       setResult(`OS Version: ${osVersion}`);
     } catch (error) {
-      console.log('OS version error:', error);
-      Alert.alert('Device Error', 'Failed to get OS version');
+      Alert.alert('Device Error', `Failed to get OS version, ${error}`);
     }
   };
 
@@ -87,8 +80,7 @@ function NativeDeviceScreen(): React.JSX.Element {
       const batteryLevel = await NativeDeviceModule.getBatteryLevel();
       setResult(`Battery Level: ${batteryLevel.toFixed(2)}%`);
     } catch (error) {
-      console.log('Battery level error:', error);
-      Alert.alert('Device Error', 'Failed to get battery level');
+      Alert.alert('Device Error', `Failed to get battery level, ${error}`);
     }
   };
 
@@ -97,19 +89,37 @@ function NativeDeviceScreen(): React.JSX.Element {
       const isCharging = await NativeDeviceModule.isBatteryCharging();
       setResult(`Battery Charging: ${isCharging ? 'Yes' : 'No'}`);
     } catch (error) {
-      console.log('Battery charging error:', error);
-      Alert.alert('Device Error', 'Failed to get battery charging status');
+      Alert.alert(
+        'Device Error',
+        `Failed to get battery charging status, ${error}`,
+      );
     }
   };
 
-  const handleGetSyncDeviceInfo = () => {
+  const handleGetSyncDeviceInfo = async () => {
     try {
-      const platformName = NativeDeviceModule.getPlatformNameSync();
-      const appVersion = NativeDeviceModule.getAppVersionSync();
-      const buildNumber = NativeDeviceModule.getBuildNumberSync();
+      const hasSyncMethods =
+        typeof NativeDeviceModule.getPlatformNameSync === 'function' &&
+        typeof NativeDeviceModule.getAppVersionSync === 'function' &&
+        typeof NativeDeviceModule.getBuildNumberSync === 'function';
+
+      if (hasSyncMethods) {
+        const platformName = NativeDeviceModule.getPlatformNameSync!();
+        const appVersion = NativeDeviceModule.getAppVersionSync!();
+        const buildNumber = NativeDeviceModule.getBuildNumberSync!();
+
+        setResult(
+          `Sync Result → Platform: ${platformName}, App Version: ${appVersion}, Build: ${buildNumber}`,
+        );
+
+        return;
+      }
+
+      const appVersion = await NativeDeviceModule.getAppVersion();
+      const buildNumber = await NativeDeviceModule.getBuildNumber();
 
       setResult(
-        `Sync Result → Platform: ${platformName}, App Version: ${appVersion}, Build: ${buildNumber}`,
+        `Async fallback → Platform: ${Platform.OS}, App Version: ${appVersion}, Build: ${buildNumber}`,
       );
     } catch (error) {
       const nativeError = error as {
@@ -117,14 +127,10 @@ function NativeDeviceScreen(): React.JSX.Element {
         message?: string;
       };
 
-      console.log('Sync device info error raw:', error);
-      console.log('Sync device info error code:', nativeError.code);
-      console.log('Sync device info error message:', nativeError.message);
-
       Alert.alert(
         'Device Error',
         `${nativeError.code ?? 'UNKNOWN'}: ${
-          nativeError.message ?? 'Failed to get sync device info'
+          nativeError.message ?? 'Failed to get device info'
         }`,
       );
     }
@@ -136,18 +142,18 @@ function NativeDeviceScreen(): React.JSX.Element {
         <Text style={styles.title}>Native Device Module</Text>
 
         <Text style={styles.description}>
-          This screen reads app, Android device, OS, and battery information
-          from Kotlin using a separate classic native module.
+          This screen reads app, device, OS, and battery information from Kotlin
+          on Android and Swift on iOS using a separate classic native module.
         </Text>
         <View style={styles.buttonWrapper}>
           <Button
-            title="Get Sync Device Info"
+            title="Get Fast Device Info"
             onPress={handleGetSyncDeviceInfo}
           />
         </View>
         <View style={styles.buttonWrapper}>
           <Button
-            title="Get Device Summary From Kotlin"
+            title="Get Device Summary From Native"
             onPress={handleGetDeviceSummary}
           />
         </View>

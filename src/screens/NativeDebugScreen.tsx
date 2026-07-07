@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import NativeDebugModule, {
+import {
   NativeCameraCaptureResult,
   NativeCouponResult,
   NativeDebugEventPayload,
@@ -23,7 +23,8 @@ import NativeDebugModule, {
   NativeOrderSummary,
   NativePermissionResult,
   OrderSyncProgressPayload,
-} from '../native/NativeDebugModule';
+} from '../types/nativeDebug';
+import NativeDebugModule from '../native/NativeDebugModule';
 
 function NativeDebugScreen(): React.JSX.Element {
   const [result, setResult] = useState<string>('No native result yet');
@@ -60,8 +61,10 @@ function NativeDebugScreen(): React.JSX.Element {
       const message = await NativeDebugModule.getNativeGreeting('SaRa');
       setResult(message);
     } catch (error) {
-      console.log('Greeting error:', error);
-      Alert.alert('Native Error', 'Failed to get greeting from Kotlin');
+      Alert.alert(
+        'Native Error',
+        `Failed to get greeting from Kotlin,${error}`,
+      );
     }
   };
 
@@ -75,8 +78,7 @@ function NativeDebugScreen(): React.JSX.Element {
 
       setResult(`Native screen opened: ${opened}`);
     } catch (error) {
-      console.log('Open native screen error:', error);
-      Alert.alert('Native Error', 'Failed to open native screen');
+      Alert.alert('Native Error', `Failed to open native screen,${error}`);
     }
   };
 
@@ -91,8 +93,10 @@ function NativeDebugScreen(): React.JSX.Element {
       setOrderSummary(summary);
       setResult(`Order summary received from ${summary.source}`);
     } catch (error) {
-      console.log('Order summary error:', error);
-      Alert.alert('Native Error', 'Failed to get order summary from Kotlin');
+      Alert.alert(
+        'Native Error',
+        `Failed to get order summary from Kotlin,${error}`,
+      );
     }
   };
 
@@ -104,8 +108,10 @@ function NativeDebugScreen(): React.JSX.Element {
       setRecentOrders(orders);
       setResult(`Received ${orders.length} orders from Kotlin`);
     } catch (error) {
-      console.log('Recent orders error:', error);
-      Alert.alert('Native Error', 'Failed to get recent orders from Kotlin');
+      Alert.alert(
+        'Native Error',
+        `Failed to get recent orders from Kotlin,${error}`,
+      );
     }
   };
 
@@ -124,8 +130,10 @@ function NativeDebugScreen(): React.JSX.Element {
       setOrderSummary(response);
       setResult(response.message);
     } catch (error) {
-      console.log('Create order from map error:', error);
-      Alert.alert('Native Error', 'Failed to send order object to Kotlin');
+      Alert.alert(
+        'Native Error',
+        `Failed to send order object to Kotlin,${error}`,
+      );
     }
   };
 
@@ -158,8 +166,10 @@ function NativeDebugScreen(): React.JSX.Element {
       setArraySummary(summary);
       setResult(summary.message);
     } catch (error) {
-      console.log('Summarize orders error:', error);
-      Alert.alert('Native Error', 'Failed to summarize order array in Kotlin');
+      Alert.alert(
+        'Native Error',
+        `Failed to summarize order array in Kotlin,${error}`,
+      );
     }
   };
 
@@ -197,8 +207,7 @@ function NativeDebugScreen(): React.JSX.Element {
 
       setResult(`Event emitted: ${emitted}`);
     } catch (error) {
-      console.log('Emit event error:', error);
-      Alert.alert('Native Error', 'Failed to emit native event');
+      Alert.alert('Native Error', `Failed to emit native event,${error}`);
     }
   };
 
@@ -212,8 +221,7 @@ function NativeDebugScreen(): React.JSX.Element {
 
       setResult(message);
     } catch (error) {
-      console.log('Start fake order sync error:', error);
-      Alert.alert('Native Error', 'Failed to start fake order sync');
+      Alert.alert('Native Error', `Failed to start fake order sync,${error}`);
     }
   };
 
@@ -227,7 +235,6 @@ function NativeDebugScreen(): React.JSX.Element {
         setResult(result.message);
       },
       (code, message) => {
-        console.log('Coupon callback error:', code, message);
         Alert.alert('Coupon Error', `${code}: ${message}`);
       },
     );
@@ -241,8 +248,7 @@ function NativeDebugScreen(): React.JSX.Element {
       setCameraPermission(result);
       setResult(result.message);
     } catch (error) {
-      console.log('Check camera permission error:', error);
-      Alert.alert('Native Error', 'Failed to check camera permission');
+      Alert.alert('Native Error', `Failed to check camera permission,${error}`);
     }
   };
 
@@ -254,8 +260,10 @@ function NativeDebugScreen(): React.JSX.Element {
       setCameraPermission(result);
       setResult(result.message);
     } catch (error) {
-      console.log('Request camera permission error:', error);
-      Alert.alert('Native Error', 'Failed to request camera permission');
+      Alert.alert(
+        'Native Error',
+        `Failed to request camera permission,${error}`,
+      );
     }
   };
 
@@ -271,10 +279,6 @@ function NativeDebugScreen(): React.JSX.Element {
         code?: string;
         message?: string;
       };
-
-      console.log('Open camera error raw:', error);
-      console.log('Open camera error code:', nativeError.code);
-      console.log('Open camera error message:', nativeError.message);
 
       Alert.alert(
         'Camera Error',
@@ -297,10 +301,6 @@ function NativeDebugScreen(): React.JSX.Element {
         code?: string;
         message?: string;
       };
-
-      console.log('Open full-size camera error raw:', error);
-      console.log('Open full-size camera error code:', nativeError.code);
-      console.log('Open full-size camera error message:', nativeError.message);
 
       Alert.alert(
         'Full-size Camera Error',

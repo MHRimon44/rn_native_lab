@@ -9,16 +9,17 @@ type NativeDeviceModuleType = {
   getBatteryLevel(): Promise<number>;
   isBatteryCharging(): Promise<boolean>;
   getDeviceSummary(): Promise<NativeDeviceSummary>;
-  getPlatformNameSync(): string;
-  getAppVersionSync(): string;
-  getBuildNumberSync(): string;
+
+  getPlatformNameSync?: () => string;
+  getAppVersionSync?: () => string;
+  getBuildNumberSync?: () => string;
 };
 
 const { NativeDeviceModule } = NativeModules;
 
-if (!NativeDeviceModule && Platform.OS === 'android') {
+if (!NativeDeviceModule) {
   throw new Error(
-    'NativeDeviceModule is not available. Check Android package registration and rebuild the app.',
+    `NativeDeviceModule is not available on ${Platform.OS}. Check native module registration and rebuild the app.`,
   );
 }
 
