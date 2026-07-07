@@ -22,6 +22,7 @@ class MainActivity : ReactActivity() {
         Log.d(TAG, "onCreate called")
 
         handleNativeDebugIntent(intent)
+        handleNotificationTapIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -30,13 +31,20 @@ class MainActivity : ReactActivity() {
         Log.d(TAG, "onNewIntent called")
 
         setIntent(intent)
+
         handleNativeDebugIntent(intent)
+        handleNotificationTapIntent(intent)
     }
 
     private fun handleNativeDebugIntent(intent: Intent?) {
-        if (intent == null) return
+        if (intent == null) {
+            return
+        }
 
-        val shouldOpenNativeDebug = intent.getBooleanExtra("openNativeDebug", false)
+        val shouldOpenNativeDebug = intent.getBooleanExtra(
+            "openNativeDebug",
+            false
+        )
 
         if (shouldOpenNativeDebug) {
             val orderId = intent.getStringExtra("orderId") ?: "ORD-DEFAULT"
@@ -51,6 +59,26 @@ class MainActivity : ReactActivity() {
         }
     }
 
+    private fun handleNotificationTapIntent(intent: Intent?) {
+        if (intent == null) {
+            return
+        }
+
+        val notificationId = intent.getStringExtra("notification_id")
+
+        if (notificationId.isNullOrBlank()) {
+            return
+        }
+
+        Log.d(TAG, "Notification tap received. ID: $notificationId")
+
+        NotificationTapStore.saveFromIntent(intent)
+    }
+
     override fun createReactActivityDelegate(): ReactActivityDelegate =
-        DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+        DefaultReactActivityDelegate(
+            this,
+            mainComponentName,
+            fabricEnabled
+        )
 }

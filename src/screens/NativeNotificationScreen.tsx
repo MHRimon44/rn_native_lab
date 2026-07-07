@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -9,11 +9,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { RouteProp, useRoute } from '@react-navigation/native';
 import NativeNotificationModule from '../native/NativeNotificationModule';
 import { NativeNotification } from '../types/nativeNotification';
+import { RootStackParamList } from '../types/navigator';
 
 function NativeNotificationScreen(): React.JSX.Element {
+  const route = useRoute<RouteProp<RootStackParamList, 'NativeNotification'>>();
   const [title, setTitle] = useState<string>('SaRa Notification');
   const [message, setMessage] = useState<string>(
     'This notification was created from a native module.',
@@ -44,6 +46,37 @@ function NativeNotificationScreen(): React.JSX.Element {
     setNotifications(inbox);
     return inbox;
   };
+
+  useEffect(() => {
+    const initialNotificationId = route.params?.initialNotificationId;
+
+    if (!initialNotificationId) {
+      loadNotifications().catch(error => {
+        showNativeError('Load Inbox Error', error);
+      });
+      return;
+    }
+
+    const loadTappedNotification = async () => {
+      try {
+        const inbox = await loadNotifications();
+
+        const tappedNotification = inbox.find(
+          item => item.id === initialNotificationId,
+        );
+
+        setResult(
+          tappedNotification
+            ? `Opened from notification tap: ${tappedNotification.title}`
+            : `Opened from notification tap. ID: ${initialNotificationId}`,
+        );
+      } catch (error) {
+        showNativeError('Notification Tap Error', error);
+      }
+    };
+
+    loadTappedNotification();
+  }, [route.params?.initialNotificationId]);
 
   const handleRequestPermission = async () => {
     try {

@@ -54,6 +54,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
   ) {
     let userInfo = response.notification.request.content.userInfo
 
+    NotificationTapStore.shared.saveFromUserInfo(userInfo)
+
     print("Notification tapped:", userInfo)
 
     completionHandler()

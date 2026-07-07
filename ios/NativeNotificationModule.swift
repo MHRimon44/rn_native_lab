@@ -2,6 +2,49 @@ import Foundation
 import UserNotifications
 import SQLite3
 
+class NotificationTapStore {
+  static let shared = NotificationTapStore()
+
+  private var pendingTap: [String: Any]?
+
+  private init() {}
+
+  func saveFromUserInfo(_ userInfo: [AnyHashable: Any]) {
+    guard let id = userInfo["id"] as? String else {
+      return
+    }
+
+    let title = userInfo["title"] as? String ?? ""
+    let message = userInfo["message"] as? String ?? ""
+    let source = userInfo["source"] as? String ?? "local"
+
+    pendingTap = [
+      "id": id,
+      "title": title,
+      "message": message,
+      "source": source == "NativeNotificationModule" ? "local" : source,
+      "openedAt": currentIsoTime()
+    ]
+  }
+
+  func getPendingTap() -> [String: Any]? {
+    return pendingTap
+  }
+
+  func clear() {
+    pendingTap = nil
+  }
+
+  private func currentIsoTime() -> String {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [
+      .withInternetDateTime,
+      .withFractionalSeconds
+    ]
+    return formatter.string(from: Date())
+  }
+}
+
 @objc(NativeNotificationModule)
 class NativeNotificationModule: NSObject {
 
@@ -411,6 +454,26 @@ class NativeNotificationModule: NSObject {
       .withFractionalSeconds
     ]
     return formatter.string(from: Date())
+  }
+  @objc
+  func getInitialNotification(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    if let tap = NotificationTapStore.shared.getPendingTap() {
+      resolve(tap)
+    } else {
+      resolve(nil)
+    }
+  }
+
+  @objc
+  func clearInitialNotification(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    NotificationTapStore.shared.clear()
+    resolve(true)
   }
 
   @objc

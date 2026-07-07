@@ -198,6 +198,8 @@ class NativeNotificationModule(
             launchIntent.putExtra("notification_id", inboxId)
             launchIntent.putExtra("notification_title", title)
             launchIntent.putExtra("notification_message", message)
+            launchIntent.putExtra("notification_source", "local")
+            launchIntent.action = "RNNativeLab_NOTIFICATION_$inboxId" 
 
             val pendingIntentFlags =
                 PendingIntent.FLAG_UPDATE_CURRENT or
@@ -386,6 +388,48 @@ class NativeNotificationModule(
             promise.reject(
                 "CLEAR_NOTIFICATIONS_ERROR",
                 error.message ?: "Failed to clear notifications",
+                error
+            )
+        }
+    }
+
+    @ReactMethod
+    fun getInitialNotification(promise: Promise) {
+        try {
+            val tap = NotificationTapStore.getPendingTap()
+
+            if (tap == null) {
+                promise.resolve(null)
+                return
+            }
+
+            val map = Arguments.createMap().apply {
+                putString("id", tap.id)
+                putString("title", tap.title)
+                putString("message", tap.message)
+                putString("source", tap.source)
+                putString("openedAt", tap.openedAt)
+            }
+
+            promise.resolve(map)
+        } catch (error: Exception) {
+            promise.reject(
+                "GET_INITIAL_NOTIFICATION_ERROR",
+                error.message ?: "Failed to get initial notification",
+                error
+            )
+        }
+    }
+
+    @ReactMethod
+    fun clearInitialNotification(promise: Promise) {
+        try {
+            NotificationTapStore.clear()
+            promise.resolve(true)
+        } catch (error: Exception) {
+            promise.reject(
+                "CLEAR_INITIAL_NOTIFICATION_ERROR",
+                error.message ?: "Failed to clear initial notification",
                 error
             )
         }

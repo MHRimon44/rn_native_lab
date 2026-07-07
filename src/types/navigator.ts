@@ -3,5 +3,9 @@ export type RootStackParamList = {
   NativeDebug: undefined;
   NativeDevice: undefined;
   NativeSecureStorage: undefined;
-  NativeNotification: undefined;
+  NativeNotification:
+    | {
+        initialNotificationId?: string;
+      }
+    | undefined;
 };

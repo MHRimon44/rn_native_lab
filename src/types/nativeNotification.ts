@@ -8,3 +8,11 @@ export type NativeNotification = {
   createdAt: string;
   source: NativeNotificationSource;
 };
+
+export type NativeNotificationTap = {
+  id: string;
+  title: string;
+  message: string;
+  source: NativeNotificationSource;
+  openedAt: string;
+};
