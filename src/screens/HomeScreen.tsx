@@ -26,6 +26,12 @@ const menuItems: MenuItem[] = [
       'Next mini-project: app version, build number, device model, OS version, battery status.',
     routeName: 'NativeDevice',
   },
+  {
+    title: 'Native Secure Storage',
+    description:
+      'Save, read, delete, and clear secure values using Android encrypted storage and iOS Keychain.',
+    routeName: 'NativeSecureStorage',
+  },
 ];
 
 function HomeScreen({ navigation }: Props): React.JSX.Element {

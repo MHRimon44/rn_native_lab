@@ -178,7 +178,10 @@ class NativeDeviceModule(
                 putString("appVersion", packageInfo.versionName ?: "Unknown")
                 putString("buildNumber", buildNumber)
                 putString("deviceModel", "${Build.MANUFACTURER} ${Build.MODEL}")
-                putString("osVersion", "Android ${Build.VERSION.RELEASE} API ${Build.VERSION.SDK_INT}")
+                putString(
+                    "osVersion",
+                    "Android ${Build.VERSION.RELEASE} API ${Build.VERSION.SDK_INT}"
+                )
                 putDouble("batteryLevel", batteryLevel)
                 putBoolean("isBatteryCharging", isCharging)
                 putString("source", "Kotlin NativeDeviceModule")
@@ -192,6 +195,8 @@ class NativeDeviceModule(
                 error
             )
         }
+    }
+
     @ReactMethod(isBlockingSynchronousMethod = true)
     fun getPlatformNameSync(): String {
         return "android"
@@ -228,7 +233,6 @@ class NativeDeviceModule(
         } catch (error: Exception) {
             "Unknown"
         }
-    }
     }
 
     private fun getBatteryIntent(): Intent? {
